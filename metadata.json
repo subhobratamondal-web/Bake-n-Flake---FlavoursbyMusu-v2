@@ -1,0 +1,8 @@
+{
+  "name": "Remix Bake n\u0027 Flake ~ Flavors by Musu V1",
+  "description": "A premium bakery application featuring a dynamic gallery, multi-language support (English/Bengali), and order management integrated with Google Sheets.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
+}
