@@ -22,6 +22,18 @@ const getInitialFallbackGalleryData = (): GalleryData => {
   ];
   return {
     items,
+    'Chocolate Cakes': [
+      'https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png',
+      'https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg',
+      'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
+    ],
+    'Butterscotch Cakes': [
+      'https://i.ibb.co/fYcwMKdc/Butterscotch-Cakes-1.png',
+      'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
+    ],
+    'Vanilla Cakes': [
+      'https://i.ibb.co/qMBQG6Nk/Vanilla-Cake-1.png'
+    ],
     'YouTube Video': [
       { vid: 'yt1', nameEn: "Cakes 🍰", nameBn: "কেকস 🍰", img: "https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" },
       { vid: 'yt2', nameEn: "Pizza 🍕", nameBn: "পিজ্জা 🍕", img: "https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" }

@@ -83,7 +83,7 @@ const contactInfo = [
 
 export default function GallerySection() {
   const { galleryData, lang, theme } = useContext(AppContext);
-  const [activeTab, setActiveTab] = useState<'Signature Menu' | 'Thoughtful Gifting' | 'Something More' | 'Social Feeds'>('Social Feeds');
+  const [activeTab, setActiveTab] = useState<'Signature Menu' | 'Thoughtful Gifting' | 'Something More' | 'Social Feeds'>('Signature Menu');
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState<number | null>(null);
