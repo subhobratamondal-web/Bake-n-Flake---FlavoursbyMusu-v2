@@ -11,7 +11,27 @@ import OrderModal from './components/OrderModal';
 import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
 import { Language, Translation, GalleryData, VideoItem } from './types';
+import { flavours, gifts, moreOptionsData } from './constants/data';
 import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon } from 'lucide-react';
+
+const getInitialFallbackGalleryData = (): GalleryData => {
+  const items = [
+    ...flavours.map(f => ({ ...f, section: 'Signature' })),
+    ...gifts.map(g => ({ ...g, section: 'Gifting' })),
+    ...moreOptionsData.map(m => ({ ...m, section: 'More' }))
+  ];
+  return {
+    items,
+    'YouTube Video': [
+      { vid: 'yt1', nameEn: "Cakes 🍰", nameBn: "কেকস 🍰", img: "https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" },
+      { vid: 'yt2', nameEn: "Pizza 🍕", nameBn: "পিজ্জা 🍕", img: "https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" }
+    ],
+    'Facebook Video': [
+      { vid: 'fb1', nameEn: "Cake Decoration", nameBn: "কেক ডেকোরেশন", img: "https://bakings.in/wp-content/uploads/2025/04/Rosy-Barbie-Doll-Cake-510x513.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" },
+      { vid: 'fb2', nameEn: "Special Custom Cake", nameBn: "স্পেশাল কাস্টম কেক", img: "https://bakings.in/wp-content/uploads/2025/04/Batman-Theme-Cake-399x400.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" }
+    ]
+  };
+};
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
 import { Toast } from './components/common/Toast';
@@ -389,8 +409,27 @@ export default function App() {
     }
     return 'light';
   });
-  const [galleryData, setGalleryData] = useState<GalleryData>({});
-  const [loading, setLoading] = useState(true);
+  const [galleryData, setGalleryData] = useState<GalleryData>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const cached = localStorage.getItem('bake_n_flake_gallery_cache');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items) && parsed.items.length > 0) {
+            return parsed;
+          }
+        }
+      } catch (e) {
+        console.error('Failed to parse local storage cache:', e);
+      }
+    }
+    const initial = getInitialFallbackGalleryData();
+    try {
+      localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(initial));
+    } catch (e) {}
+    return initial;
+  });
+  const [loading, setLoading] = useState(false);
   const [minLoadingDone, setMinLoadingDone] = useState(false);
   const [isOrderModalOpen, setOrderModalOpen] = useState(false);
   const [serverDate, setServerDate] = useState<{ date: string, year: number } | null>(null);
@@ -421,8 +460,8 @@ export default function App() {
   }, []);
 
   useEffect(() => {
-    // Minimum ~8 seconds loading time for smooth transition and data ready as requested
-    const timer = setTimeout(() => setMinLoadingDone(true), 8000);
+    // Minimum ~2 seconds loading time for smooth transition
+    const timer = setTimeout(() => setMinLoadingDone(true), 2000);
     return () => clearTimeout(timer);
   }, []);
 
@@ -430,15 +469,12 @@ export default function App() {
     fetchGallery();
     const interval = setInterval(() => {
       fetchGallery(true);
-    }, 3000); // Check for updates every 3s
+    }, 5000); // Check for updates every 5s
     return () => clearInterval(interval);
   }, []);
 
   const fetchGallery = async (silent = false) => {
     if (!silent && (!galleryData.items || galleryData.items.length === 0)) setLoading(true);
-    
-    // Add a small delay for non-silent calls to allow server to wake up
-    if (!silent) await new Promise(resolve => setTimeout(resolve, 500));
 
     try {
       const response = await fetch('/api/gallery');
@@ -459,17 +495,29 @@ export default function App() {
 
       try {
         const data = JSON.parse(text);
-        if (data && typeof data === 'object' && Array.isArray(data.items)) {
+        if (data && typeof data === 'object' && Array.isArray(data.items) && data.items.length > 0) {
           setGalleryData(data);
+          try {
+            localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
+          } catch (e) {
+            console.error('LocalStorage save error:', e);
+          }
         }
       } catch (e) {
         if (!silent) console.error('Gallery JSON Parse Error:', e);
       }
     } catch (error: any) {
-      // "Failed to fetch" usually means server is booting or connection lost
       if (!silent) {
-        console.warn('Gallery connection status: retry pending...');
+        console.warn('Gallery connection status: using LocalStorage cache / static fallback');
       }
+      setGalleryData(prev => {
+        if (prev && Array.isArray(prev.items) && prev.items.length > 0) return prev;
+        const fallback = getInitialFallbackGalleryData();
+        try {
+          localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(fallback));
+        } catch (e) {}
+        return fallback;
+      });
     } finally {
       if (!silent) {
         setLoading(false);
