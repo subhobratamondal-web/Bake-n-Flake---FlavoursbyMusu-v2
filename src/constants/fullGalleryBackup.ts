@@ -290,7 +290,49 @@ export const FULL_GALLERY_BACKUP = {
       "img": "https://i.ibb.co/jkNm1Zq8/Cupcakes-1.jpg"
     }
   ],
-  "Facebook Video": [],
+  "Facebook Video": [
+    {
+      "vid": "fb_1",
+      "nameEn": "A Glimpse of New Recipes",
+      "nameBn": "A Glimpse of New Recipes",
+      "url": "https://vimeo.com/1188942087?fl=pl&fe=cm",
+      "img": "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg"
+    },
+    {
+      "vid": "fb_2",
+      "nameEn": "Cake Decoration Tutorial",
+      "nameBn": "Cake Decoration Tutorial",
+      "url": "https://vimeo.com/1188940101?fl=pl&fe=cm",
+      "img": "https://i.ibb.co/XZPM9BkH/WEEDING-CAKE-2.png"
+    },
+    {
+      "vid": "fb_3",
+      "nameEn": "Tutorials Cake Decoration Tutorial",
+      "nameBn": "Tutorials Cake Decoration Tutorial",
+      "url": "https://vimeo.com/1188937051?fl=pl&fe=cm",
+      "img": "https://i.ibb.co/dwQX9L2g/CAKESPLAYLIST-ezgif-com-speed.gif"
+    },
+    {
+      "vid": "fb_4",
+      "nameEn": "Yummy Choco Delight",
+      "nameBn": "Yummy Choco Delight",
+      "url": "https://vimeo.com/1188940142?fl=pl&fe=cm",
+      "img": "https://i.ibb.co/LDrh9zSg/brownie-2.png"
+    }
+  ],
+  "Story Section": [
+    "https://i.ibb.co/XkYN11bL/PROFILE.jpg",
+    "https://i.ibb.co/9mnwZgX4/TIRE-CAKE1.png",
+    "https://i.ibb.co/9HDRRk0F/Jur-cake.png"
+  ],
+  "Hero Section": [
+    "https://i.ibb.co/QvRWRGy3/POSTER-4.jpg",
+    "https://i.ibb.co/DB3XXw4/PIZZA-BUNS-1.png",
+    "https://i.ibb.co/ymbNDrks/Brownies-2.jpg",
+    "https://i.ibb.co/Dfh5X1tm/TIRE-CAKE.png",
+    "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg",
+    "https://i.ibb.co/9mnwZgX4/TIRE-CAKE1.png"
+  ],
   "Chocolate Cakes": [
     "https://i.ibb.co/S4MNP7Vf/Chocolate-Cakes.png",
     "https://i.ibb.co/nGGJ4PS/Chocolate-Cakes-2.png",
@@ -603,5 +645,11 @@ export const FULL_GALLERY_BACKUP = {
     "https://i.pinimg.com/736x/0e/74/6d/0e746d0cd978b893db6944b1d6239b17.jpg",
     "https://i.pinimg.com/1200x/e3/02/d9/e302d9c06ef199a4682dc6906da9275e.jpg",
     "https://i.pinimg.com/736x/74/df/97/74df97c58814ebee1a122845e42efbbd.jpg"
+  ],
+  "Header": [
+    "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
+  ],
+  "Footer": [
+    "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
   ]
 };
