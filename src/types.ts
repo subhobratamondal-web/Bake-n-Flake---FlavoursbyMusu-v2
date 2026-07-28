@@ -29,6 +29,12 @@ export interface Review {
   textBn: string;
   avatar: string;
   recommends?: boolean;
+  badgeEn?: string;
+  badgeBn?: string;
+  ownerReplyEn?: string;
+  ownerReplyBn?: string;
+  topics?: string[];
+  likes?: number;
 }
 
 export interface GalleryData {

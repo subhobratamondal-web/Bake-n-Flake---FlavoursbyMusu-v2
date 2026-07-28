@@ -8,13 +8,15 @@ import Reviews from './components/Reviews';
 import Contact from './components/Contact';
 import Footer from './components/Footer';
 import OrderModal from './components/OrderModal';
+import Preloader3D from './components/Preloader3D';
+import ShortcutsModal from './components/ShortcutsModal';
 import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
 import { Language, Translation, GalleryData, VideoItem } from './types';
 import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
 import { fetchGalleryDataDirectFromSheets } from './utils/googleSheetsSync';
 import { flavours, gifts, moreOptionsData } from './constants/data';
-import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon } from 'lucide-react';
+import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard } from 'lucide-react';
 
 const getInitialFallbackGalleryData = (): GalleryData => {
   return FULL_GALLERY_BACKUP as unknown as GalleryData;
@@ -419,6 +421,7 @@ export default function App() {
   const [loading, setLoading] = useState(false);
   const [minLoadingDone, setMinLoadingDone] = useState(false);
   const [isOrderModalOpen, setOrderModalOpen] = useState(false);
+  const [isShortcutsOpen, setIsShortcutsOpen] = useState(false);
   const [serverDate, setServerDate] = useState<{ date: string, year: number } | null>(null);
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
   const [showScrollToTop, setShowScrollToTop] = useState(false);
@@ -431,13 +434,6 @@ export default function App() {
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  useEffect(() => {
-    fetch('/api/server-date')
-      .then(res => res.json())
-      .then(data => setServerDate(data))
-      .catch(err => console.error('Date fetch error:', err));
-  }, []);
-
   const handleLanguageChange = useCallback((newLang: Language) => {
     setLang(newLang);
     setToast({
@@ -446,9 +442,67 @@ export default function App() {
     });
   }, []);
 
+  const toggleTheme = useCallback(() => {
+    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
+  }, []);
+
+  // Global Keyboard Shortcuts Listener
   useEffect(() => {
-    // Minimum ~2 seconds loading time for smooth transition
-    const timer = setTimeout(() => setMinLoadingDone(true), 2000);
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement;
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.isContentEditable)) {
+        if (e.key === 'Escape') {
+          target.blur();
+        }
+        return;
+      }
+
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey;
+
+      if (isCmdOrCtrl && e.key.toLowerCase() === 'k') {
+        e.preventDefault();
+        const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+        if (searchInput) {
+          searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+          searchInput.focus();
+        } else {
+          document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' });
+        }
+      } else if (isCmdOrCtrl && e.key.toLowerCase() === 'o') {
+        e.preventDefault();
+        setOrderModalOpen(true);
+      } else if (isCmdOrCtrl && e.key.toLowerCase() === 'm') {
+        e.preventDefault();
+        document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' });
+      } else if (isCmdOrCtrl && e.key.toLowerCase() === 'l') {
+        e.preventDefault();
+        handleLanguageChange(lang === 'en' ? 'bn' : 'en');
+      } else if (isCmdOrCtrl && e.key.toLowerCase() === 't') {
+        e.preventDefault();
+        toggleTheme();
+      } else if (e.key === '?' || (e.key === '/' && e.shiftKey)) {
+        e.preventDefault();
+        setIsShortcutsOpen(prev => !prev);
+      } else if (e.key === 'Escape') {
+        setIsShortcutsOpen(false);
+        setOrderModalOpen(false);
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [lang, handleLanguageChange, toggleTheme]);
+
+  useEffect(() => {
+    fetch('/api/server-date')
+      .then(res => res.json())
+      .then(data => setServerDate(data))
+      .catch(err => console.error('Date fetch error:', err));
+  }, []);
+
+  useEffect(() => {
+    // Minimum ~2.2 seconds 3D loading time for smooth transition
+    const timer = setTimeout(() => setMinLoadingDone(true), 2200);
     return () => clearTimeout(timer);
   }, []);
 
@@ -522,10 +576,6 @@ export default function App() {
     }
   };
 
-  const toggleTheme = useCallback(() => {
-    setTheme(prev => (prev === 'light' ? 'dark' : 'light'));
-  }, []);
-
   useEffect(() => {
     const root = window.document.documentElement;
     if (theme === 'dark') {
@@ -544,89 +594,8 @@ export default function App() {
   const t = { ...translations[lang], lang };
 
   if (!minLoadingDone) {
-    return (
-      <div className={cn(
-        "min-h-screen relative flex flex-col items-center justify-center p-4 overflow-hidden transition-colors duration-700",
-        theme === 'dark' 
-          ? "bg-black bg-gradient-to-br from-black via-slate-900 to-pink-950/20" 
-          : "bg-white bg-gradient-to-br from-white via-pink-50 to-slate-100"
-      )}>
-        <CakeParticles />
-        
-        <motion.div
-           initial={{ opacity: 0, scale: 0.8 }}
-           animate={{ opacity: 1, scale: 1 }}
-           className={cn(
-             "relative z-10 p-12 md:p-16 rounded-[3rem] backdrop-blur-3xl border border-white/20 shadow-[0_32px_64px_-24px_rgba(0,0,0,0.5)] flex flex-col items-center",
-             theme === 'dark' 
-               ? "bg-pink-900/20 glass-3d border-pink-500/10" 
-               : "bg-white/60 glass-3d border-pink-200"
-           )}
-        >
-          <div className="relative mb-8">
-            {/* Animated Logo with Zoom In-Out */}
-            <motion.div
-               animate={{ 
-                 scale: [1, 1.15, 1],
-                 rotate: [0, 5, -5, 0],
-                 boxShadow: [
-                   "0 0 20px rgba(236,72,153,0.3)",
-                   "0 0 50px rgba(236,72,153,0.6)",
-                   "0 0 20px rgba(236,72,153,0.3)"
-                 ]
-               }}
-               transition={{ 
-                 repeat: Infinity, 
-                 duration: 3, 
-                 ease: "easeInOut" 
-               }}
-               className="w-32 h-32 md:w-48 md:h-48 bg-white rounded-full flex items-center justify-center overflow-hidden border-4 border-pink-500 shadow-2xl relative z-10"
-            >
-               <img src={logoUrl} alt="Bake n Flake" className="w-full h-full object-cover scale-150" referrerPolicy="no-referrer" />
-            </motion.div>
-            
-            {/* Glow Rings */}
-            <div className="absolute inset-[-20%] rounded-full bg-pink-500/10 blur-3xl animate-pulse" />
-          </div>
-
-          <div className="text-center">
-            <motion.h2 
-               initial={{ opacity: 0, y: 10 }}
-               animate={{ opacity: 1, y: 0 }}
-               transition={{ delay: 0.5 }}
-               className="font-serif text-3xl md:text-5xl font-black text-slate-900 dark:text-white tracking-tighter"
-            >
-              Bake n' Flake
-            </motion.h2>
-            <motion.div
-               initial={{ width: 0 }}
-               animate={{ width: "100%" }}
-               transition={{ duration: 1.5, delay: 0.8 }}
-               className="h-1 bg-gradient-to-r from-transparent via-pink-500 to-transparent my-4"
-            />
-            <p className="text-pink-600 dark:text-pink-400 text-xs md:text-sm font-black uppercase tracking-[0.4em] animate-pulse">
-               {lang === 'en' ? 'Crafting Sweet Moments...' : 'সুস্বাদু মুহূর্ত তৈরি করছি...'}
-            </p>
-          </div>
-
-          {/* Progress Indicator */}
-          <div className="mt-12 w-48 h-1.5 bg-slate-200 dark:bg-white/10 rounded-full overflow-hidden">
-             <motion.div
-                initial={{ x: "-100%" }}
-                animate={{ x: "0%" }}
-                transition={{ duration: 4, ease: "easeInOut" }}
-                className="w-full h-full bg-pink-500 shadow-[0_0_15px_rgba(236,72,153,1)]"
-             />
-          </div>
-        </motion.div>
-
-        {/* Decorative Particles */}
-        <div className="absolute top-10 left-10 w-24 h-24 bg-pink-500/5 rounded-full blur-2xl animate-pulse" />
-        <div className="absolute bottom-10 right-10 w-32 h-32 bg-pink-500/10 rounded-full blur-3xl animate-pulse delay-700" />
-      </div>
-    );
+    return <Preloader3D logoUrl={logoUrl} lang={lang} theme={theme} />;
   }
-
 
   return (
     <AppContext.Provider value={{ 
@@ -655,15 +624,49 @@ export default function App() {
           lang={lang} 
         />
 
+        <ShortcutsModal
+          isOpen={isShortcutsOpen}
+          onClose={() => setIsShortcutsOpen(false)}
+          lang={lang}
+          onTriggerSearch={() => {
+            const searchInput = document.querySelector('input[type="text"]') as HTMLInputElement;
+            if (searchInput) {
+              searchInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+              searchInput.focus();
+            } else {
+              document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' });
+            }
+          }}
+          onTriggerOrder={() => setOrderModalOpen(true)}
+          onTriggerMenu={() => document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })}
+          onTriggerLang={() => handleLanguageChange(lang === 'en' ? 'bn' : 'en')}
+          onTriggerTheme={() => toggleTheme()}
+        />
+
         <Toast 
           message={toast.message} 
           isVisible={toast.visible} 
           onClose={() => setToast(prev => ({ ...prev, visible: false }))} 
         />
 
+        {/* Floating Quick Action & Shortcuts Dock */}
+        <div className="fixed bottom-24 sm:bottom-28 md:bottom-10 left-4 sm:left-6 z-[450] flex items-center gap-2">
+          <motion.button
+            whileHover={{ scale: 1.08 }}
+            whileTap={{ scale: 0.92 }}
+            onClick={() => setIsShortcutsOpen(true)}
+            className="px-3 sm:px-4 py-2.5 rounded-full bg-slate-900/80 dark:bg-white/15 text-white backdrop-blur-xl border border-white/20 shadow-xl flex items-center gap-2 text-xs font-bold transition-all hover:bg-pink-600 dark:hover:bg-pink-600"
+            title="Keyboard Shortcuts (?)"
+          >
+            <Keyboard size={16} className="text-pink-400 dark:text-pink-300" />
+            <span className="hidden sm:inline">{lang === 'en' ? 'Shortcuts' : 'শর্টকাট'}</span>
+            <span className="px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-mono hidden md:inline">?</span>
+          </motion.button>
+        </div>
+
         <AnimatePresence>
           {showScrollToTop && (
-            <div className="fixed bottom-32 md:bottom-10 right-6 md:right-10 z-[500] flex flex-col gap-3">
+            <div className="fixed bottom-24 sm:bottom-28 md:bottom-10 right-4 sm:right-6 md:right-10 z-[500] flex flex-col gap-2 sm:gap-3">
               <motion.button
                 initial={{ opacity: 0, scale: 0.5, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -671,10 +674,10 @@ export default function App() {
                 whileHover={{ scale: 1.1, backgroundColor: 'rgba(236, 72, 153, 0.9)' }}
                 whileTap={{ scale: 0.9 }}
                 onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-pink-600/40 text-white shadow-2xl flex items-center justify-center border border-white/20 backdrop-blur-xl transition-colors"
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-pink-600/60 text-white shadow-2xl flex items-center justify-center border border-white/20 backdrop-blur-xl transition-colors"
                 title="Scroll to Top"
               >
-                <ArrowUp size={22} strokeWidth={3} />
+                <ArrowUp size={20} className="sm:w-5 sm:h-5 md:w-6 md:h-6" strokeWidth={3} />
               </motion.button>
               
               <motion.button
@@ -687,11 +690,11 @@ export default function App() {
                   const footer = document.getElementById('footer');
                   footer?.scrollIntoView({ behavior: 'smooth' });
                 }}
-                className="w-12 h-12 md:w-14 md:h-14 rounded-full bg-pink-600/40 text-white shadow-2xl flex items-center justify-center border border-white/20 backdrop-blur-xl transition-colors"
+                className="w-10 h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 rounded-full bg-pink-600/60 text-white shadow-2xl flex items-center justify-center border border-white/20 backdrop-blur-xl transition-colors"
                 title="Scroll to Bottom"
               >
                 <motion.div animate={{ y: [0, 2, 0] }} transition={{ repeat: Infinity, duration: 1.5 }}>
-                  <ArrowUp size={22} strokeWidth={3} className="rotate-180" />
+                  <ArrowUp size={20} className="sm:w-5 sm:h-5 md:w-6 md:h-6 rotate-180" strokeWidth={3} />
                 </motion.div>
               </motion.button>
             </div>

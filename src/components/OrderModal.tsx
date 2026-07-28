@@ -136,22 +136,22 @@ Requirements: ${form.requirements}`;
             initial={{ opacity: 0, scale: 0.95, y: 10 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
-            className="relative w-full max-w-[98%] md:max-w-2xl bg-white dark:bg-[#1a1a1a] rounded-[2.5rem] md:rounded-[3rem] shadow-2xl overflow-hidden border border-white/20 max-h-[95vh] md:max-h-[85vh] overflow-y-auto"
+            className="relative w-full max-w-[96%] sm:max-w-xl md:max-w-2xl bg-white dark:bg-[#181124] rounded-3xl md:rounded-[3rem] shadow-2xl overflow-hidden border border-white/20 max-h-[92vh] md:max-h-[88vh] overflow-y-auto"
           >
-            <div className="p-6 md:p-12">
-              <div className="flex justify-between items-center mb-8 md:mb-10">
+            <div className="p-4 sm:p-6 md:p-10">
+              <div className="flex justify-between items-center mb-5 md:mb-8">
                 <motion.div
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
                 >
-                  <h2 className="font-serif text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">Order Custom Cake</h2>
-                  <p className="text-pink-500 font-bold text-[10px] md:text-xs uppercase tracking-widest mt-1 md:mt-2">{lang === 'en' ? 'Tell us your requirements' : 'আপনার প্রয়োজনীয়তা জানান'}</p>
+                  <h2 className="font-serif text-xl sm:text-2xl md:text-3xl font-bold text-slate-900 dark:text-white leading-tight">Order Custom Cake</h2>
+                  <p className="text-pink-500 font-bold text-[10px] sm:text-xs uppercase tracking-widest mt-1">{lang === 'en' ? 'Tell us your requirements' : 'আপনার প্রয়োজনীয়তা জানান'}</p>
                 </motion.div>
                 <button
                   onClick={onClose}
-                  className="p-2 md:p-3 bg-slate-100 dark:bg-white/5 rounded-xl md:rounded-2xl text-slate-500 hover:text-pink-500 transition-all flex-shrink-0"
+                  className="p-2.5 sm:p-3 bg-slate-100 dark:bg-white/10 rounded-xl md:rounded-2xl text-slate-500 hover:text-pink-500 transition-all flex-shrink-0"
                 >
-                  <X size={20} className="md:w-6 md:h-6" />
+                  <X size={18} className="sm:w-5 sm:h-5 md:w-6 md:h-6" />
                 </button>
               </div>
 
@@ -159,40 +159,40 @@ Requirements: ${form.requirements}`;
                 variants={containerVariants}
                 initial="hidden"
                 animate="visible"
-                className="grid md:grid-cols-2 gap-6 mb-10"
+                className="grid grid-cols-1 md:grid-cols-2 gap-4 sm:gap-6 mb-6 md:mb-8"
               >
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <motion.div variants={itemVariants}>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">
                       <Send size={12} /> Full Name
                     </label>
                     <input
                       type="text"
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium"
+                      className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium"
                       placeholder="Enter your name"
                       value={form.name}
                       onChange={e => setForm({...form, name: e.target.value})}
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">
                       <Calendar size={12} /> Delivery Date
                     </label>
                     <input
                       type="date"
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium"
+                      className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium"
                       value={form.deliveryDate}
                       onChange={e => setForm({...form, deliveryDate: e.target.value})}
                     />
                   </motion.div>
                   <motion.div variants={itemVariants} className="relative" ref={suggestionRef}>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">
                       <Pizza size={12} /> Cake Flavor
                     </label>
                     <div className="relative">
                       <input
                         type="text"
-                        className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium"
+                        className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium"
                         placeholder="e.g. Chocolate, Vanilla"
                         value={form.flavor}
                         onFocus={() => setShowSuggestions(true)}
@@ -201,7 +201,7 @@ Requirements: ${form.requirements}`;
                           setShowSuggestions(true);
                         }}
                       />
-                      <ChevronDown size={16} className="absolute right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
+                      <ChevronDown size={16} className="absolute right-4 sm:right-6 top-1/2 -translate-y-1/2 text-slate-400 pointer-events-none" />
                     </div>
                     
                     <AnimatePresence>
@@ -210,7 +210,7 @@ Requirements: ${form.requirements}`;
                           initial={{ opacity: 0, y: -10 }}
                           animate={{ opacity: 1, y: 0 }}
                           exit={{ opacity: 0, y: -10 }}
-                          className="absolute z-10 w-full mt-2 bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-white/10 rounded-2xl shadow-xl max-h-48 overflow-y-auto"
+                          className="absolute z-20 w-full mt-2 bg-white dark:bg-[#2a2a2a] border border-slate-200 dark:border-white/10 rounded-xl shadow-xl max-h-48 overflow-y-auto"
                         >
                           {filteredFlavours.map((f, i) => (
                             <button
@@ -219,7 +219,7 @@ Requirements: ${form.requirements}`;
                                 setForm({...form, flavor: lang === 'en' ? f.nameEn : f.nameBn});
                                 setShowSuggestions(false);
                               }}
-                              className="w-full px-6 py-3 text-left text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-500/10 hover:text-pink-600 transition-colors"
+                              className="w-full px-4 sm:px-6 py-2.5 sm:py-3 text-left text-xs sm:text-sm font-medium text-slate-600 dark:text-slate-300 hover:bg-pink-50 dark:hover:bg-pink-500/10 hover:text-pink-600 transition-colors"
                             >
                               {lang === 'en' ? f.nameEn : f.nameBn}
                             </button>
@@ -230,33 +230,33 @@ Requirements: ${form.requirements}`;
                   </motion.div>
                 </div>
 
-                <div className="space-y-6">
+                <div className="space-y-4 sm:space-y-6">
                   <motion.div variants={itemVariants}>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">
                       <Scale size={12} /> Cake Weight
                     </label>
                     <input
                       type="text"
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium"
+                      className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium"
                       placeholder="e.g. 1kg, 2lbs"
                       value={form.weight}
                       onChange={e => setForm({...form, weight: e.target.value})}
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-2 px-1">
+                    <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1.5 px-1">
                       <MessageSquare size={12} /> Message on Cake
                     </label>
                     <input
                       type="text"
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium"
+                      className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium"
                       placeholder="Enter message..."
                       value={form.message}
                       onChange={e => setForm({...form, message: e.target.value})}
                     />
                   </motion.div>
                   <motion.div variants={itemVariants}>
-                    <div className="flex justify-between items-center mb-2 px-1">
+                    <div className="flex justify-between items-center mb-1.5 px-1">
                       <label className="flex items-center gap-2 text-[10px] font-bold text-slate-400 uppercase tracking-widest">
                         <MessageSquare size={12} /> Design Requirements
                       </label>
@@ -268,9 +268,9 @@ Requirements: ${form.requirements}`;
                       </span>
                     </div>
                     <textarea
-                      rows={4}
+                      rows={3}
                       maxLength={MAX_REQUIREMENTS}
-                      className="w-full px-6 py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-sm font-medium resize-none"
+                      className="w-full px-4 py-3 sm:px-6 sm:py-4 bg-slate-50 dark:bg-white/5 border border-slate-200 dark:border-white/10 rounded-xl sm:rounded-2xl outline-none focus:border-pink-500 text-slate-800 dark:text-white transition-all text-xs sm:text-sm font-medium resize-none"
                       placeholder="Describe your design..."
                       value={form.requirements}
                       onChange={e => setForm({...form, requirements: e.target.value})}

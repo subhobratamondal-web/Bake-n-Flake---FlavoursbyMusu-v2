@@ -1,4 +1,4 @@
-import { GalleryData, MenuItem, VideoItem } from '../types';
+import { GalleryData, Product, VideoItem } from '../types';
 
 const SPREADSHEET_ID = '1vZsYmZzxu653U4T6O-_S0i2dazAU_VJKBRYwdgAmXSw';
 
