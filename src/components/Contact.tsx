@@ -4,6 +4,7 @@ import { motion } from 'motion/react';
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 import { BrandIcons } from './BrandIcons';
+import OptimizedImage from './OptimizedImage';
 
 export default function Contact() {
   const { t, galleryData } = useContext(AppContext);
@@ -11,7 +12,7 @@ export default function Contact() {
   const firstHeaderItem = headerItems && headerItems[0];
   const ownerAvatar = ((firstHeaderItem 
     ? (typeof firstHeaderItem === 'string' ? firstHeaderItem : (firstHeaderItem as any).img)
-    : null) || "https://bakings.in/wp-content/uploads/2024/09/musu.jpg");
+    : null) || "https://i.ibb.co/XkYN11bL/PROFILE.jpg");
 
   const socialLinks = [
     { icon: Heart, isBrand: false, label: 'OWNER', className: 'owner-neon-btn', href: 'https://www.facebook.com/musu.khan99/', color: 'text-pink-500' },
@@ -41,7 +42,13 @@ export default function Contact() {
           {/* Owner Identity */}
           <div className="flex flex-col items-center mb-12">
              <div className="w-24 h-24 rounded-full border-4 border-white dark:border-white/10 shadow-2xl overflow-hidden mb-6 bg-pink-100">
-                <img src={ownerAvatar} alt="Owner" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                <OptimizedImage 
+                  src={ownerAvatar} 
+                  fallbackSrc="https://i.ibb.co/XkYN11bL/PROFILE.jpg" 
+                  alt="Owner" 
+                  className="w-full h-full object-cover" 
+                  width={300}
+                />
              </div>
              <h4 className="text-xl font-bold text-slate-800 dark:text-white uppercase tracking-tight">{t.contact.studio}</h4>
              <a 

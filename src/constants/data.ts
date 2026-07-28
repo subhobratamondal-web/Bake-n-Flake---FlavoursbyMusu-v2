@@ -22,7 +22,7 @@ export const flavours: Product[] = [
 export const gifts: Product[] = [
   { nameEn: "Birthday Cakes", nameBn: "জন্মদিনের কেক", img: "https://i.ibb.co/hJyMC4CY/Birthday-Cake-1.jpg" },
   { nameEn: "Anniversary Cakes", nameBn: "অ্যানিভার্সারি কেক", img: "https://i.ibb.co/5gDy06k7/Aniversary-Cake-2.png" },
-  { nameEn: "Teacher's Day", nameBn: "টিচার্স ডে", img: "https://bakings.in/wp-content/uploads/2025/03/Charming-Blooms-Cake-510x509.jpg" },
+  { nameEn: "Teacher's Day", nameBn: "টিচার্স ডে", img: "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg" },
   { nameEn: "Customised Chocolates", nameBn: "কাস্টমাইজড চকোলেট", img: "https://i.ibb.co/Rp8C27Xt/Customized-Chocolates-2.jpg" },
   { nameEn: "Father's Day Cake", nameBn: "ফাদার্স ডে কেক", img: "https://i.ibb.co/YT2LRm2x/Father-s-Day-Cake-1.png" },
   { nameEn: "Mother's Day Cake", nameBn: "মাদার্স ডে কেক", img: "https://i.ibb.co/4n26zZCq/2.jpg" },

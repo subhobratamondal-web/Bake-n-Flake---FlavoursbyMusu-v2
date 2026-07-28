@@ -30,7 +30,7 @@ const linkMap: Record<string, string> = {
   'KitKat Cakes': 'https://i.ibb.co/k26bhF2H/Kitkat-1.png',
   'Birthday Cakes': 'https://i.ibb.co/hJyMC4CY/Birthday-Cake-1.jpg',
   'Anniversary Cakes': 'https://i.ibb.co/5gDy06k7/Aniversary-Cake-2.png',
-  'Teacher\'s Day': 'https://bakings.in/wp-content/uploads/2025/03/Charming-Blooms-Cake-510x509.jpg',
+  'Teacher\'s Day': 'https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg',
   'Customised Chocolates': 'https://i.ibb.co/Rp8C27Xt/Customized-Chocolates-2.jpg',
   'Father\'s Day Cake': 'https://i.ibb.co/YT2LRm2x/Father-s-Day-Cake-1.png',
   'Mother\'s Day Cake': 'https://i.ibb.co/4n26zZCq/2.jpg',
