@@ -9,6 +9,7 @@ import { HelpCircle, ChevronRight, MessageCircle, X, Search, MapPin, Cake, Palet
 import * as Icons from 'lucide-react';
 import { cn } from '../lib/utils';
 import { playSound } from '../lib/sounds';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 const FAQ: React.FC = () => {
   const { lang, galleryData } = useContext(AppContext);
@@ -381,7 +382,15 @@ const FAQ: React.FC = () => {
                                 transition={{ delay: idx * 0.1 }}
                                 className="w-8 h-8 rounded-lg border-2 border-white dark:border-slate-800 overflow-hidden bg-slate-100 shadow-sm"
                               >
-                                <img src={img} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                                <img 
+                                  src={getOptimizedImageUrl(img, 150, 75) || img || "https://i.ibb.co/XkYN11bL/PROFILE.jpg"} 
+                                  alt="Preview"
+                                  className="w-full h-full object-cover" 
+                                  referrerPolicy="no-referrer" 
+                                  onError={(e) => {
+                                    e.currentTarget.src = img || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                                  }}
+                                />
                               </motion.div>
                             ))}
                           </div>

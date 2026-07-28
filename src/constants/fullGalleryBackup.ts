@@ -263,28 +263,28 @@ export const FULL_GALLERY_BACKUP = {
   "YouTube Video": [
     {
       "nameEn": "CAKES PLAYLIST",
-      "nameBn": "https://youtu.be/MiaktUt8SfQ?list=PLt-w6cASEiNj3lRXBIpS6mKd_a6kH8g4_",
+      "nameBn": "CAKES PLAYLIST",
       "vid": "https://www.youtube.com/embed/MiaktUt8SfQ?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/MiaktUt8SfQ?list=PLt-w6cASEiNj3lRXBIpS6mKd_a6kH8g4_",
       "img": "https://i.ibb.co/9H9HtkrV/Kitkat-2.png"
     },
     {
       "nameEn": "PIZZAS PLAYLIST",
-      "nameBn": "https://youtu.be/nwrkIVJSBso?list=PLt-w6cASEiNitLmILlXM0wxu3Qtmd12Mi",
+      "nameBn": "PIZZAS PLAYLIST",
       "vid": "https://www.youtube.com/embed/nwrkIVJSBso?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/nwrkIVJSBso?list=PLt-w6cASEiNitLmILlXM0wxu3Qtmd12Mi",
       "img": "https://i.ibb.co/tpccgyqx/ezgif-com-crop.gif"
     },
     {
       "nameEn": "CHOCOLATE PLAYLIST",
-      "nameBn": "https://youtu.be/Z-fC35bu3Wo?list=PLt-w6cASEiNgkIxf4HM6OnJNywrw73TdT",
+      "nameBn": "CHOCOLATE PLAYLIST",
       "vid": "https://www.youtube.com/embed/Z-fC35bu3Wo?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/Z-fC35bu3Wo?list=PLt-w6cASEiNgkIxf4HM6OnJNywrw73TdT",
       "img": "https://i.ibb.co/P7m3T7B/Customized-Chocolates-1.jpg"
     },
     {
       "nameEn": "DONUT PLAYLIST",
-      "nameBn": "https://youtu.be/L19zCjbSV5g?list=PLt-w6cASEiNgM79eHUYkOMeXlp13Eu8HS",
+      "nameBn": "DONUT PLAYLIST",
       "vid": "https://www.youtube.com/embed/L19zCjbSV5g?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/L19zCjbSV5g?list=PLt-w6cASEiNgM79eHUYkOMeXlp13Eu8HS",
       "img": "https://i.ibb.co/jkNm1Zq8/Cupcakes-1.jpg"
@@ -293,28 +293,28 @@ export const FULL_GALLERY_BACKUP = {
   "Facebook Video": [
     {
       "nameEn": "A Glimpse of New Recipes",
-      "nameBn": "https://vimeo.com/1188942087?fl=pl&fe=cm",
+      "nameBn": "A Glimpse of New Recipes",
       "vid": "https://player.vimeo.com/video/1188942087?autoplay=1",
       "url": "https://vimeo.com/1188942087?fl=pl&fe=cm",
       "img": "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg"
     },
     {
       "nameEn": "Cake Decoration Tutorial",
-      "nameBn": "https://vimeo.com/1188940101?fl=pl&fe=cm",
+      "nameBn": "Cake Decoration Tutorial",
       "vid": "https://player.vimeo.com/video/1188940101?autoplay=1",
       "url": "https://vimeo.com/1188940101?fl=pl&fe=cm",
       "img": "https://i.ibb.co/XZPM9BkH/WEEDING-CAKE-2.png"
     },
     {
       "nameEn": "Tutorials Cake Decoration Tutorial",
-      "nameBn": "https://vimeo.com/1188937051?fl=pl&fe=cm",
+      "nameBn": "Tutorials Cake Decoration Tutorial",
       "vid": "https://player.vimeo.com/video/1188937051?autoplay=1",
       "url": "https://vimeo.com/1188937051?fl=pl&fe=cm",
       "img": "https://i.ibb.co/dwQX9L2g/CAKESPLAYLIST-ezgif-com-speed.gif"
     },
     {
       "nameEn": "Yummy Choco Delight",
-      "nameBn": "https://vimeo.com/1188940142?fl=pl&fe=cm",
+      "nameBn": "Yummy Choco Delight",
       "vid": "https://player.vimeo.com/video/1188940142?autoplay=1",
       "url": "https://vimeo.com/1188940142?fl=pl&fe=cm",
       "img": "https://i.ibb.co/LDrh9zSg/brownie-2.png"

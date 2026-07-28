@@ -4,6 +4,7 @@ import { ChevronDown, ExternalLink, MapPin, Phone, MessageCircle, MessageSquare,
 import * as Icons from 'lucide-react';
 import { FAQ, Language } from '../types';
 import { cn } from '../lib/utils';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 interface FAQItemProps {
   faq: FAQ;
@@ -31,11 +32,19 @@ const FAQImage: React.FC<{ src: string; delay: number }> = ({ src, delay }) => {
         className="relative w-24 h-24 md:w-28 md:h-28 rounded-2xl overflow-hidden border-4 border-white dark:border-white/10 shadow-md group/img cursor-pointer cursor-zoom-in"
       >
         <img 
-          src={src} 
+          src={getOptimizedImageUrl(src, 300, 75) || src || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} 
           alt="FAQ Visual" 
           className="w-full h-full object-cover transition-transform duration-500 group-hover/img:scale-110" 
           referrerPolicy="no-referrer"
-          onError={() => setImgError(true)}
+          onError={(e) => {
+            const target = e.currentTarget;
+            if (!target.dataset.triedOriginal) {
+              target.dataset.triedOriginal = 'true';
+              target.src = src;
+            } else {
+              setImgError(true);
+            }
+          }}
         />
         <div className="absolute inset-0 bg-black/0 group-hover/img:bg-black/10 transition-colors" />
       </motion.div>
@@ -63,7 +72,7 @@ const FAQImage: React.FC<{ src: string; delay: number }> = ({ src, delay }) => {
                 <X size={20} />
               </button>
               <img 
-                src={src} 
+                src={src || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} 
                 className="w-full h-auto rounded-2xl shadow-2xl" 
                 alt="Zoomed FAQ Visual" 
                 referrerPolicy="no-referrer"

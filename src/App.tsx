@@ -14,10 +14,12 @@ import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
 import { Language, Translation, GalleryData, VideoItem, WeatherCondition, WeatherData } from './types';
 import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
-import { fetchGalleryDataDirectFromSheets } from './utils/googleSheetsSync';
+import { fetchGalleryDataDirectFromSheets, getOptimizedImageUrl } from './utils/googleSheetsSync';
+import { OptimizedImage } from './components/OptimizedImage';
+import { VideoSkeleton } from './components/common/Skeleton';
 import { WEATHER_THEMES, fetchCurrentWeather } from './utils/weatherTheme';
 import { flavours, gifts, moreOptionsData } from './constants/data';
-import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard } from 'lucide-react';
+import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard, RefreshCw, CheckCircle2 } from 'lucide-react';
 
 const getInitialFallbackGalleryData = (): GalleryData => {
   return FULL_GALLERY_BACKUP as unknown as GalleryData;
@@ -77,7 +79,7 @@ const NeonParticles = React.memo(() => {
               repeat: Infinity,
               ease: "linear"
             }}
-            className={cn("absolute gpu-accelerated transition-colors duration-1000", p.colorClass)}
+            className={cn("absolute gpu-accelerated", p.colorClass)}
             style={{ left: `${p.left}%` }}
           >
             <Icon size={p.size} fill="currentColor" />
@@ -186,6 +188,9 @@ interface AppContextType {
   setWeatherCondition: (condition: WeatherCondition) => void;
   setWeatherAuto: (isAuto: boolean) => void;
   refreshWeather: () => Promise<void>;
+  lastSyncedTime: string | null;
+  syncStatus: 'synced' | 'syncing' | 'offline';
+  handleForceRefresh: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -217,16 +222,13 @@ const VideoFrame = ({ type, video, index, t }: { type: 'youtube' | 'facebook', v
             className="absolute inset-0 cursor-pointer overflow-hidden"
             onClick={handleCardClick}
         >
-          <motion.img 
-            initial={{ scale: 1.1 }}
-            animate={{ scale: 1 }}
-            transition={{ duration: 1.2 }}
+          <OptimizedImage 
             src={video.img} 
             alt={video.nameEn}
+            width={800}
+            quality={80}
+            fallbackSrc="https://i.ibb.co/XkYN11bL/PROFILE.jpg"
             className="w-full h-full object-cover"
-            loading="lazy"
-            decoding="async"
-            style={{ backgroundColor: 'transparent', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 16 9\'%3E%3Crect width=\'16\' height=\'9\' fill=\'%23a0aec0\' fill-opacity=\'0.1\'/%3E%3C/svg%3E")' }}
           />
           <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 flex items-center justify-center group-hover:bg-black/40 transition-colors">
              <motion.div 
@@ -279,15 +281,9 @@ function VideoSection() {
   const [fbIndex, setFbIndex] = useState(0);
 
   const ytVidsRaw = (galleryData['YouTube Video'] as VideoItem[])?.filter(v => v.img && v.img.length > 0);
-  const ytVids = (ytVidsRaw && ytVidsRaw.length > 0) ? ytVidsRaw : [
-    { vid: 'yt1', nameEn: "Cakes 🍰", nameBn: "কেকস 🍰", img: "https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" },
-    { vid: 'yt2', nameEn: "Pizza 🍕", nameBn: "পিজ্জা 🍕", img: "https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" }
-  ];
+  const ytVids = (ytVidsRaw && ytVidsRaw.length > 0) ? ytVidsRaw : (FULL_GALLERY_BACKUP['YouTube Video'] as VideoItem[]) || [];
   const fbVidsRaw = (galleryData['Facebook Video'] as VideoItem[])?.filter(v => v.img && v.img.length > 0);
-  const fbVids = (fbVidsRaw && fbVidsRaw.length > 0) ? fbVidsRaw : [
-    { vid: 'fb1', nameEn: "Cake Decoration", nameBn: "কেক ডেকোরেশন", img: "https://bakings.in/wp-content/uploads/2025/04/Rosy-Barbie-Doll-Cake-510x513.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" },
-    { vid: 'fb2', nameEn: "Special Custom Cake", nameBn: "স্পেশাল কাস্টম কেক", img: "https://bakings.in/wp-content/uploads/2025/04/Batman-Theme-Cake-399x400.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" }
-  ];
+  const fbVids = (fbVidsRaw && fbVidsRaw.length > 0) ? fbVidsRaw : (FULL_GALLERY_BACKUP['Facebook Video'] as VideoItem[]) || [];
 
   useEffect(() => {
     const timer = setInterval(() => {
@@ -316,16 +312,12 @@ function VideoSection() {
           {ytVids.length > 0 ? (
             <VideoFrame type="youtube" video={ytVids[ytIndex]} index={ytIndex} t={t} />
           ) : (
-            <div className="aspect-video rounded-[2.5rem] bg-slate-100/5 dark:bg-white/5 animate-pulse flex items-center justify-center text-xs text-slate-400 uppercase tracking-widest font-black">
-               Loading YouTube...
-            </div>
+            <VideoSkeleton />
           )}
           {fbVids.length > 0 ? (
             <VideoFrame type="facebook" video={fbVids[fbIndex]} index={fbIndex} t={t} />
           ) : (
-            <div className="aspect-video rounded-[2.5rem] bg-slate-100/5 dark:bg-white/5 animate-pulse flex items-center justify-center text-xs text-slate-400 uppercase tracking-widest font-black">
-               Loading Tutorials...
-            </div>
+            <VideoSkeleton />
           )}
         </div>
 
@@ -359,24 +351,28 @@ export default function App() {
     return 'light';
   });
   const [galleryData, setGalleryData] = useState<GalleryData>(() => {
+    let cachedParsed: Partial<GalleryData> = {};
     if (typeof window !== 'undefined') {
       try {
         const cached = localStorage.getItem('bake_n_flake_gallery_cache');
         if (cached) {
           const parsed = JSON.parse(cached);
-          if (parsed && typeof parsed === 'object' && Array.isArray(parsed.items) && parsed.items.length > 0) {
-            return parsed;
+          if (parsed && typeof parsed === 'object') {
+            cachedParsed = parsed;
           }
         }
       } catch (e) {
         console.error('Failed to parse local storage cache:', e);
       }
     }
-    const initial = getInitialFallbackGalleryData();
+    const combined = {
+      ...(FULL_GALLERY_BACKUP as unknown as GalleryData),
+      ...cachedParsed
+    };
     try {
-      localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(initial));
+      localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(combined));
     } catch (e) {}
-    return initial;
+    return combined;
   });
   const [loading, setLoading] = useState(false);
   const [minLoadingDone, setMinLoadingDone] = useState(false);
@@ -386,6 +382,25 @@ export default function App() {
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
   const [showScrollToTop, setShowScrollToTop] = useState(false);
   const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+  const [syncStatus, setSyncStatus] = useState<'synced' | 'syncing' | 'offline'>('synced');
+  const [lastSyncedTime, setLastSyncedTime] = useState<string | null>(() => {
+    if (typeof window !== 'undefined') {
+      return localStorage.getItem('bake_n_flake_last_sync_time') || new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    }
+    return null;
+  });
+
+  const handleForceRefresh = useCallback(async () => {
+    try {
+      localStorage.removeItem('bake_n_flake_gallery_cache');
+      localStorage.removeItem('bake_n_flake_last_sync_time');
+    } catch (e) {}
+    setToast({
+      message: lang === 'en' ? 'Cache cleared. Refetching latest gallery...' : 'ক্যাশে ক্লিয়ার করা হয়েছে। নতুন তথ্য লোড হচ্ছে...',
+      visible: true
+    });
+    await fetchGallery(false);
+  }, [lang]);
 
   const refreshWeather = useCallback(async (isAuto = true, cond?: WeatherCondition) => {
     const data = await fetchCurrentWeather(isAuto, cond);
@@ -510,8 +525,38 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  const applyGranularGalleryUpdate = useCallback((newData: GalleryData) => {
+    setGalleryData(prev => {
+      if (!prev) return newData;
+      let hasChanges = false;
+      const nextState = { ...prev };
+
+      for (const key of Object.keys(newData) as Array<keyof GalleryData>) {
+        const prevStr = JSON.stringify(prev[key]);
+        const newStr = JSON.stringify(newData[key]);
+        if (prevStr !== newStr) {
+          nextState[key] = newData[key] as any;
+          hasChanges = true;
+        }
+      }
+
+      if (!hasChanges) {
+        return prev;
+      }
+
+      try {
+        localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(nextState));
+      } catch (e) {
+        console.error('LocalStorage save error:', e);
+      }
+
+      return nextState;
+    });
+  }, []);
+
   const fetchGallery = async (silent = false) => {
     if (!silent && (!galleryDataRef.current?.items || galleryDataRef.current.items.length === 0)) setLoading(true);
+    setSyncStatus('syncing');
 
     let fetchedSuccessfully = false;
 
@@ -523,15 +568,7 @@ export default function App() {
         if (!isHtml) {
           const data = JSON.parse(text);
           if (data && typeof data === 'object' && Array.isArray(data.items) && data.items.length > 0) {
-            const isDifferent = JSON.stringify(data) !== JSON.stringify(galleryDataRef.current);
-            if (isDifferent) {
-              setGalleryData(data);
-              try {
-                localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
-              } catch (e) {
-                console.error('LocalStorage save error:', e);
-              }
-            }
+            applyGranularGalleryUpdate(data);
             fetchedSuccessfully = true;
           }
         }
@@ -545,15 +582,7 @@ export default function App() {
       try {
         const directData = await fetchGalleryDataDirectFromSheets();
         if (directData && Array.isArray(directData.items) && directData.items.length > 0) {
-          const isDifferent = JSON.stringify(directData) !== JSON.stringify(galleryDataRef.current);
-          if (isDifferent) {
-            setGalleryData(directData);
-            try {
-              localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(directData));
-            } catch (e) {
-              console.error('LocalStorage save error:', e);
-            }
-          }
+          applyGranularGalleryUpdate(directData);
           fetchedSuccessfully = true;
         }
       } catch (e) {
@@ -573,10 +602,74 @@ export default function App() {
       });
     }
 
+    const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+    if (fetchedSuccessfully) {
+      setSyncStatus('synced');
+      setLastSyncedTime(timeStr);
+      try {
+        localStorage.setItem('bake_n_flake_last_sync_time', timeStr);
+      } catch (e) {}
+    } else {
+      setSyncStatus(navigator.onLine ? 'synced' : 'offline');
+      if (!lastSyncedTime) setLastSyncedTime(timeStr);
+    }
+
     if (!silent) {
       setLoading(false);
     }
   };
+
+  // Background pre-fetching utility using link rel="prefetch"
+  useEffect(() => {
+    if (!galleryData || !galleryData.items || galleryData.items.length === 0) return;
+
+    const prefetchNextGalleryImages = () => {
+      const urls: string[] = [];
+
+      // Prioritize upcoming gallery images
+      galleryData.items.slice(0, 24).forEach(item => {
+        if (item.img) {
+          const opt = getOptimizedImageUrl(item.img, 700, 80) || item.img;
+          if (opt) urls.push(opt);
+        }
+      });
+
+      // Also prefetch menu category images
+      Object.values(galleryData).forEach(val => {
+        if (Array.isArray(val)) {
+          val.slice(0, 6).forEach((item: any) => {
+            const imgUrl = typeof item === 'string' ? item : item?.img;
+            if (imgUrl) {
+              const opt = getOptimizedImageUrl(imgUrl, 600, 75) || imgUrl;
+              if (opt) urls.push(opt);
+            }
+          });
+        }
+      });
+
+      const uniqueUrls = Array.from(new Set(urls)).slice(0, 30);
+
+      uniqueUrls.forEach(url => {
+        if (!document.querySelector(`link[rel="prefetch"][href="${CSS.escape(url)}"]`)) {
+          const link = document.createElement('link');
+          link.rel = 'prefetch';
+          link.as = 'image';
+          link.href = url;
+          document.head.appendChild(link);
+        }
+      });
+    };
+
+    if (typeof window !== 'undefined') {
+      if ('requestIdleCallback' in window) {
+        const handle = (window as any).requestIdleCallback(prefetchNextGalleryImages, { timeout: 2500 });
+        return () => (window as any).cancelIdleCallback(handle);
+      } else {
+        const timer = setTimeout(prefetchNextGalleryImages, 1500);
+        return () => clearTimeout(timer);
+      }
+    }
+  }, [galleryData]);
 
   useEffect(() => {
     const root = window.document.documentElement;
@@ -603,7 +696,8 @@ export default function App() {
     <AppContext.Provider value={{ 
       lang, setLang: handleLanguageChange, t, theme, toggleTheme, galleryData, loading,
       setOrderModalOpen, serverDate,
-      weatherData, setWeatherCondition, setWeatherAuto, refreshWeather
+      weatherData, setWeatherCondition, setWeatherAuto, refreshWeather,
+      lastSyncedTime, syncStatus, handleForceRefresh
     }}>
       <Background />
       <div className={cn(
@@ -644,6 +738,9 @@ export default function App() {
           onTriggerMenu={() => document.getElementById('menu')?.scrollIntoView({ behavior: 'smooth' })}
           onTriggerLang={() => handleLanguageChange(lang === 'en' ? 'bn' : 'en')}
           onTriggerTheme={() => toggleTheme()}
+          onTriggerForceRefresh={handleForceRefresh}
+          lastSyncedTime={lastSyncedTime}
+          syncStatus={syncStatus}
         />
 
         <Toast 
@@ -652,20 +749,7 @@ export default function App() {
           onClose={() => setToast(prev => ({ ...prev, visible: false }))} 
         />
 
-        {/* Floating Quick Action & Shortcuts Dock */}
-        <div className="fixed bottom-24 sm:bottom-28 md:bottom-10 left-4 sm:left-6 z-[450] flex items-center gap-2">
-          <motion.button
-            whileHover={{ scale: 1.08 }}
-            whileTap={{ scale: 0.92 }}
-            onClick={() => setIsShortcutsOpen(true)}
-            className="px-3 sm:px-4 py-2.5 rounded-full bg-slate-900/80 dark:bg-white/15 text-white backdrop-blur-xl border border-white/20 shadow-xl flex items-center gap-2 text-xs font-bold transition-all hover:bg-pink-600 dark:hover:bg-pink-600"
-            title="Keyboard Shortcuts (?)"
-          >
-            <Keyboard size={16} className="text-pink-400 dark:text-pink-300" />
-            <span className="hidden sm:inline">{lang === 'en' ? 'Shortcuts' : 'শর্টকাট'}</span>
-            <span className="px-1.5 py-0.5 rounded bg-white/20 text-[10px] font-mono hidden md:inline">?</span>
-          </motion.button>
-        </div>
+
 
         <AnimatePresence>
           {showScrollToTop && (

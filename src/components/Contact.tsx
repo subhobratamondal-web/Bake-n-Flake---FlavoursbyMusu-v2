@@ -11,7 +11,7 @@ export default function Contact() {
   const firstHeaderItem = headerItems && headerItems[0];
   const ownerAvatar = ((firstHeaderItem 
     ? (typeof firstHeaderItem === 'string' ? firstHeaderItem : (firstHeaderItem as any).img)
-    : null) || "https://bakings.in/wp-content/uploads/2024/09/musu.jpg") || null;
+    : null) || "https://bakings.in/wp-content/uploads/2024/09/musu.jpg");
 
   const socialLinks = [
     { icon: Heart, isBrand: false, label: 'OWNER', className: 'owner-neon-btn', href: 'https://www.facebook.com/musu.khan99/', color: 'text-pink-500' },
@@ -111,7 +111,7 @@ export default function Contact() {
               </div>
 
               {/* Row 2: 3 Icons Centered */}
-              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto justify-center">
+              <div className="flex flex-wrap justify-center gap-4 md:gap-6 max-w-4xl mx-auto">
                 {socialLinks.slice(4).map((social, i) => {
                   const Icon = social.icon;
                   return (
@@ -124,9 +124,8 @@ export default function Contact() {
                       transition={{ delay: (i + 4) * 0.08 }}
                       viewport={{ once: true }}
                       className={cn(
-                         "flex flex-col items-center justify-center gap-3 p-5 md:p-6 rounded-[2.5rem] glass-3d border border-white/40 dark:border-white/10 transition-all hover:scale-105 active:scale-95 group min-h-[130px] md:min-h-[140px]",
-                         social.className,
-                         i === 2 ? "col-span-2 sm:col-span-1 max-w-[200px] sm:max-w-none mx-auto w-full" : ""
+                         "flex flex-col items-center justify-center gap-3 p-5 md:p-6 rounded-[2.5rem] glass-3d border border-white/40 dark:border-white/10 transition-all hover:scale-105 active:scale-95 group min-h-[130px] md:min-h-[140px] w-[calc(50%-0.5rem)] sm:w-[180px] md:w-[190px]",
+                         social.className
                       )}
                     >
                       <div className={cn("w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-all duration-300 group-hover:scale-110", social.color)}>

@@ -137,7 +137,7 @@ export default function Preloader3D({ logoUrl, lang, theme }: Preloader3DProps) 
             >
               {/* Logo Image */}
               <img
-                src={logoUrl}
+                src={logoUrl || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"}
                 alt="Bake n Flake Logo"
                 className="w-full h-full object-cover scale-150 rounded-full filter drop-shadow-md"
                 referrerPolicy="no-referrer"

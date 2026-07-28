@@ -65,25 +65,42 @@ const BotFooter = () => (
 
 const TypewriterText = ({ text, skipAnimation, onComplete }: { text: string; skipAnimation?: boolean, onComplete?: () => void }) => {
   const [displayedText, setDisplayedText] = useState(skipAnimation ? text : '');
+  const onCompleteRef = useRef(onComplete);
+  const isDoneRef = useRef(skipAnimation);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (skipAnimation) {
       setDisplayedText(text);
+      isDoneRef.current = true;
+      onCompleteRef.current?.();
       return;
     }
-    
+
+    if (isDoneRef.current) {
+      setDisplayedText(text);
+      return;
+    }
+
     let index = 0;
+    setDisplayedText('');
     const interval = setInterval(() => {
-      index += 2; // Type 2 chars per tick for a slightly faster look
-      setDisplayedText(text.slice(0, index));
+      index += 2; // Type 2 chars per tick for a smooth look
       if (index >= text.length) {
+        setDisplayedText(text);
+        isDoneRef.current = true;
         clearInterval(interval);
-        onComplete?.();
+        onCompleteRef.current?.();
+      } else {
+        setDisplayedText(text.slice(0, index));
       }
     }, 15);
-    
+
     return () => clearInterval(interval);
-  }, [text, skipAnimation, onComplete]);
+  }, [text, skipAnimation]);
 
   return <>{displayedText}</>;
 };
@@ -91,12 +108,17 @@ const TypewriterText = ({ text, skipAnimation, onComplete }: { text: string; ski
 const AnimatedBotMessage = ({ msg, skipAnimation, onComplete }: { msg: Message, skipAnimation: boolean, onComplete: () => void }) => {
   const [textFinished, setTextFinished] = useState(skipAnimation || !msg.text);
   const [bnFinished, setBnFinished] = useState(skipAnimation || !msg.bn);
+  const onCompleteRef = useRef(onComplete);
+
+  useEffect(() => {
+    onCompleteRef.current = onComplete;
+  }, [onComplete]);
 
   useEffect(() => {
     if (textFinished && bnFinished) {
-      onComplete();
+      onCompleteRef.current?.();
     }
-  }, [textFinished, bnFinished, onComplete]);
+  }, [textFinished, bnFinished]);
 
   return (
     <>
@@ -108,9 +130,9 @@ const AnimatedBotMessage = ({ msg, skipAnimation, onComplete }: { msg: Message, 
           <TypewriterText text={msg.bn} skipAnimation={skipAnimation} onComplete={() => setBnFinished(true)} />
         </p>
       )}
-      {msg.image && (bnFinished || skipAnimation) && (
+      {Boolean(msg.image) && (bnFinished || skipAnimation) && (
         <motion.div initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} className="mt-3">
-          <img src={msg.image} alt="Reference" className="rounded-xl w-full object-cover border border-pink-100 dark:border-slate-700" loading="lazy" />
+          <img src={msg.image || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} alt="Reference" className="rounded-xl w-full object-cover border border-pink-100 dark:border-slate-700" loading="lazy" />
         </motion.div>
       )}
       {msg.links && msg.links.length > 0 && (bnFinished || skipAnimation) && (

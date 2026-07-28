@@ -4,6 +4,8 @@ import { Sparkles, ShoppingBag, Star, Clock, Heart, ChevronLeft, ChevronRight, P
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
+import { FULL_GALLERY_BACKUP } from '../constants/fullGalleryBackup';
+import { OptimizedImage } from './OptimizedImage';
 
 import { playSound } from '../lib/sounds';
 
@@ -14,14 +16,7 @@ export default function Hero() {
   const carouselRef = useRef<HTMLDivElement>(null);
 
   const heroImagesData = (galleryData['Hero Section'] as string[])?.filter(url => url && url.length > 0);
-  const heroImages = (heroImagesData && heroImagesData.length > 0) ? heroImagesData : [
-    "https://i.ibb.co/QvRWRGy3/POSTER-4.jpg",
-    "https://i.ibb.co/DB3XXw4/PIZZA-BUNS-1.png",
-    "https://i.ibb.co/ymbNDrks/Brownies-2.jpg",
-    "https://i.ibb.co/Dfh5X1tm/TIRE-CAKE.png",
-    "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg",
-    "https://i.ibb.co/9mnwZgX4/TIRE-CAKE1.png"
-  ];
+  const heroImages = (heroImagesData && heroImagesData.length > 0) ? heroImagesData : (FULL_GALLERY_BACKUP['Hero Section'] as string[]) || [];
 
   const features = [
     { title: "Made with Love", sub: "Since 2019", icon: Heart, color: "text-pink-500", bg: "bg-white shadow-md" },
@@ -132,7 +127,7 @@ export default function Hero() {
               {/* Back Layer 1 - Shows the next image, NO ROTATION */}
               <div className="absolute inset-0 translate-x-6 translate-y-6 rounded-[3rem] md:rounded-[4rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black dark:bg-[#080808]">
                  <img 
-                   src={getOptimizedImageUrl(heroImages[(currentImageIndex + 1) % heroImages.length], 600, 75)} 
+                   src={getOptimizedImageUrl(heroImages[(currentImageIndex + 1) % heroImages.length], 600, 75) || heroImages[(currentImageIndex + 1) % heroImages.length] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg"} 
                    className="w-full h-full object-cover opacity-20 blur-[2px]"
                    alt="Next Preview"
                    referrerPolicy="no-referrer"
@@ -157,20 +152,13 @@ export default function Hero() {
                   transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
                   className="absolute inset-0 z-10 gpu-accelerated shadow-[0_30px_60px_rgba(0,0,0,0.5)] rounded-[3rem] md:rounded-[4rem] overflow-hidden border-[6px] border-white/90 dark:border-white/10 shadow-inner"
                 >
-                  <img
-                    src={getOptimizedImageUrl(heroImages[currentImageIndex], 800, 80)}
+                  <OptimizedImage
+                    src={heroImages[currentImageIndex]}
                     alt="Signature Cake"
+                    width={800}
+                    quality={80}
+                    fallbackSrc="https://i.ibb.co/XkYN11bL/PROFILE.jpg"
                     className="w-full h-full object-cover"
-                    referrerPolicy="no-referrer"
-                    loading="eager"
-                    decoding="async"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.dataset.triedOriginal) {
-                        target.dataset.triedOriginal = 'true';
-                        target.src = heroImages[currentImageIndex] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
-                      }
-                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                 </motion.div>
@@ -295,7 +283,7 @@ export default function Hero() {
                       )}>
                         {feature.isAvatar ? (
                           <div className="w-full h-full rounded-full overflow-hidden border-2 border-pink-500/30">
-                            <img src={feature.image} alt={feature.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+                            <img src={feature.image || "https://i.ibb.co/wrc3VVRg/PROFILE.jpg"} alt={feature.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                         ) : (
                           <feature.icon className={feature.color} size={28} />

@@ -4,17 +4,15 @@ import { Heart, Sparkles } from 'lucide-react';
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
+import { FULL_GALLERY_BACKUP } from '../constants/fullGalleryBackup';
+import { OptimizedImage } from './OptimizedImage';
 
 export default function Story() {
   const { t, galleryData } = useContext(AppContext);
   const [currentSlide, setCurrentSlide] = useState(0);
 
   const storyImagesData = (galleryData['Story Section'] as string[])?.filter(url => url && url.length > 0);
-  const storyImages = (storyImagesData && storyImagesData.length > 0) ? storyImagesData : [
-    "https://i.ibb.co/XkYN11bL/PROFILE.jpg",
-    "https://bakings.in/wp-content/uploads/2024/04/Rose-Symphony-Cake.jpg",
-    "https://bakings.in/wp-content/uploads/2024/04/Chocolate-Overload-Photo-Cake.jpg"
-  ];
+  const storyImages = (storyImagesData && storyImagesData.length > 0) ? storyImagesData : (FULL_GALLERY_BACKUP['Story Section'] as string[]) || [];
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -36,25 +34,13 @@ export default function Story() {
              {/* Slider Container */}
              <div className="aspect-[4/5] rounded-[4rem] overflow-hidden shadow-[0_40px_80px_rgba(0,0,0,0.3)] relative z-10 border-8 border-white dark:border-white/5 bg-white/5 neon-border-pink">
                 <AnimatePresence mode="popLayout" initial={false}>
-                  <motion.img 
-                    key={currentSlide}
-                    initial={{ x: currentSlide % 2 === 0 ? "100%" : "-100%" }}
-                    animate={{ x: 0 }}
-                    exit={{ x: currentSlide % 2 === 0 ? "-100%" : "100%" }}
-                    transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
-                    src={getOptimizedImageUrl(storyImages[currentSlide], 800, 80)}
+                  <OptimizedImage 
+                    src={storyImages[currentSlide]}
                     alt="Our Story" 
+                    width={800}
+                    quality={80}
+                    fallbackSrc="https://i.ibb.co/XkYN11bL/PROFILE.jpg"
                     className="absolute inset-0 w-full h-full object-cover"
-                    decoding="async"
-                    loading="lazy"
-                    referrerPolicy="no-referrer"
-                    onError={(e) => {
-                      const target = e.currentTarget;
-                      if (!target.dataset.triedOriginal) {
-                        target.dataset.triedOriginal = 'true';
-                        target.src = storyImages[currentSlide] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
-                      }
-                    }}
                   />
                 </AnimatePresence>
              </div>

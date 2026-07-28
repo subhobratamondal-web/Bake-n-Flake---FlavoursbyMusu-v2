@@ -5,7 +5,7 @@ import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 
 export default function Footer() {
-  const { t, galleryData, serverDate } = useContext(AppContext);
+  const { t, galleryData, serverDate, lastSyncedTime, syncStatus, handleForceRefresh } = useContext(AppContext);
   const [isLinksVisible, setIsLinksVisible] = useState(false);
   const headerLogoItem = galleryData['Header']?.[1];
   const logoUrl = (headerLogoItem 
@@ -30,7 +30,7 @@ export default function Footer() {
           >
              <div className="flex items-center gap-4 mb-8 justify-center md:justify-start group cursor-pointer" onClick={scrollToTop}>
                 <div className="w-16 h-16 rounded-full overflow-hidden border-2 border-pink-500 shadow-lg transition-transform group-hover:scale-110">
-                   <img src={logoUrl} alt="Logo" className="w-full h-full object-cover scale-150" referrerPolicy="no-referrer" />
+                   <img src={logoUrl || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} alt="Logo" className="w-full h-full object-cover scale-150" referrerPolicy="no-referrer" />
                 </div>
                 <div className="text-left">
                    <a 
@@ -150,10 +150,28 @@ export default function Footer() {
         </div>
 
         <div className="pt-12 border-t border-slate-200 dark:border-white/5 text-center flex flex-col items-center gap-6">
-          <div className="flex flex-col items-center gap-4">
+          <div className="flex flex-col items-center gap-2">
              <p className="text-[10px] font-bold text-slate-500 dark:text-slate-500 uppercase tracking-[0.3em]">
                &copy; {serverDate?.year || new Date().getFullYear()} BAKE N' FLAKE ~ FLAVOURS BY MUSU | {serverDate?.date ? `LAST UPDATED: ${serverDate.date}` : 'KOLKATA, WB'}
              </p>
+             {lastSyncedTime && (
+               <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-slate-100 dark:bg-white/5 border border-slate-200 dark:border-white/10 text-[10px] font-mono text-slate-500 dark:text-slate-400">
+                 <span className={cn(
+                   "w-2 h-2 rounded-full inline-block",
+                   syncStatus === 'synced' ? "bg-emerald-500 animate-pulse" : syncStatus === 'syncing' ? "bg-sky-500 animate-ping" : "bg-amber-500"
+                 )} />
+                 <span>Google Sheets Sync: <strong className="text-pink-600 dark:text-pink-400">{lastSyncedTime}</strong></span>
+                 {handleForceRefresh && (
+                   <button 
+                     onClick={() => handleForceRefresh()}
+                     className="ml-1 text-[9px] underline font-bold uppercase hover:text-pink-500 transition-colors"
+                     title="Force re-sync data"
+                   >
+                     Refetch
+                   </button>
+                 )}
+               </div>
+             )}
           </div>
 
           <div className="flex gap-8 text-[9px] font-bold text-slate-400 uppercase tracking-[0.2em] mb-4">

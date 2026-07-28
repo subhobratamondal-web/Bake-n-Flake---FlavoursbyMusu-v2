@@ -97,7 +97,7 @@ async function generateBackup() {
     menuRows.slice(1).forEach(row => {
       const section = row[0] || 'Signature Menu';
       const nameEn = row[1] || '';
-      const nameBn = row[2] || nameEn;
+      const nameBn = (row[2] && !row[2].startsWith('http')) ? row[2] : nameEn;
       let img = '';
       for (let i = 3; i < row.length; i++) {
         if (row[i] && (row[i].startsWith('http') || row[i].includes('drive.google.com') || row[i].includes('ibb.co'))) {
@@ -119,7 +119,7 @@ async function generateBackup() {
       const labelEn = row[0] || `Video ${idx + 1}`;
       const rawVid = row[1] || '';
       const fallbackImg = row[2] || '';
-      const labelBn = row[3] || labelEn;
+      const labelBn = (row[3] && !row[3].startsWith('http')) ? row[3] : labelEn;
       let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
       if (!finalImg) {
         finalImg = getYoutubeThumbnail(rawVid || fallbackImg);
@@ -146,7 +146,7 @@ async function generateBackup() {
       const labelEn = row[0] || `Video ${idx + 1}`;
       const rawVid = row[1] || '';
       const fallbackImg = row[2] || '';
-      const labelBn = row[3] || labelEn;
+      const labelBn = (row[3] && !row[3].startsWith('http')) ? row[3] : labelEn;
       let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
       if (!finalImg) {
         finalImg = getYoutubeThumbnail(rawVid || fallbackImg);

@@ -297,7 +297,14 @@ export default function Reviews() {
                     <div className="flex items-start justify-between gap-4 mb-4">
                       <div className="flex items-center gap-3 sm:gap-4">
                         <div className="relative shrink-0">
-                          <img src={review.avatar} alt={review.nameEn} className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white dark:border-slate-800 shadow-sm" />
+                          <img 
+                            src={review.avatar || "https://i.ibb.co/XkYN11bL/PROFILE.jpg"} 
+                            alt={review.nameEn} 
+                            className="w-12 h-12 sm:w-14 sm:h-14 rounded-full border-2 border-white dark:border-slate-800 shadow-sm object-cover" 
+                            onError={(e) => {
+                              e.currentTarget.src = "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                            }}
+                          />
                           <div className="absolute -bottom-1 -right-1 w-5 h-5 sm:w-6 sm:h-6 bg-blue-500 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-800">
                             {source === 'google' ? <Globe className="text-white" size={10} /> : <Facebook className="text-white" size={10} />}
                           </div>

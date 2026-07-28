@@ -29,9 +29,9 @@ function convertImageUrl(url: string): string {
 }
 
 export function getOptimizedImageUrl(url: string, width = 500, quality = 75): string {
-  if (!url) return 'https://i.ibb.co/XkYN11bL/PROFILE.jpg';
+  if (!url) return 'https://i.ibb.co/Xx2kxrrg/LOGO-1.png';
   const cleaned = url.trim();
-  if (cleaned.startsWith('data:') || cleaned.match(/\.(gif|GIF)($|\?)/)) {
+  if (cleaned.startsWith('data:') || cleaned.match(/\.(gif|GIF)($|\?)/i) || cleaned.includes('ezgif')) {
     return cleaned;
   }
   if (cleaned.includes('lh3.googleusercontent.com')) {
@@ -122,7 +122,7 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
       dataRows.forEach((row, idx) => {
         const section = row[0] || 'Signature Menu';
         const nameEn = row[1] || '';
-        const nameBn = row[2] || nameEn;
+        const nameBn = (row[2] && !row[2].startsWith('http')) ? row[2] : nameEn;
         let img = '';
         for (let i = 3; i < row.length; i++) {
           if (row[i] && (row[i].startsWith('http') || row[i].includes('drive.google.com') || row[i].includes('ibb.co'))) {
@@ -143,7 +143,7 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
         const titleEn = row[0] || `Video ${idx + 1}`;
         const rawVid = row[1] || '';
         const fallbackImg = row[2] || '';
-        const titleBn = row[3] || titleEn;
+        const titleBn = (row[3] && !row[3].startsWith('http')) ? row[3] : titleEn;
         let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
         if (!finalImg) {
           finalImg = getYoutubeThumbnail(rawVid || fallbackImg);
@@ -171,7 +171,7 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
         const titleEn = row[0] || `Video ${idx + 1}`;
         const rawVid = row[1] || '';
         const fallbackImg = row[2] || '';
-        const titleBn = row[3] || titleEn;
+        const titleBn = (row[3] && !row[3].startsWith('http')) ? row[3] : titleEn;
         let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
         if (!finalImg) {
           finalImg = getYoutubeThumbnail(rawVid || fallbackImg);

@@ -1,6 +1,6 @@
 import React, { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Keyboard, Search, ShoppingBag, Send, Globe, Sun, Moon, HelpCircle } from 'lucide-react';
+import { X, Keyboard, Search, ShoppingBag, Send, Globe, Sun, Moon, RefreshCw, CheckCircle2 } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface ShortcutsModalProps {
@@ -12,6 +12,9 @@ interface ShortcutsModalProps {
   onTriggerMenu: () => void;
   onTriggerLang: () => void;
   onTriggerTheme: () => void;
+  onTriggerForceRefresh?: () => void;
+  lastSyncedTime?: string | null;
+  syncStatus?: 'synced' | 'syncing' | 'offline';
 }
 
 export default function ShortcutsModal({
@@ -22,7 +25,10 @@ export default function ShortcutsModal({
   onTriggerOrder,
   onTriggerMenu,
   onTriggerLang,
-  onTriggerTheme
+  onTriggerTheme,
+  onTriggerForceRefresh,
+  lastSyncedTime,
+  syncStatus = 'synced'
 }: ShortcutsModalProps) {
   const isMac = typeof window !== 'undefined' && /Mac|iPod|iPhone|iPad/.test(navigator.platform);
   const cmdKey = isMac ? '⌘' : 'Ctrl';
@@ -63,6 +69,13 @@ export default function ShortcutsModal({
       icon: Sun,
       action: onTriggerTheme
     },
+    ...(onTriggerForceRefresh ? [{
+      key: `${cmdKey} + R`,
+      descriptionEn: 'Force Refresh Gallery Cache',
+      descriptionBn: 'গ্যালারি ক্যাশে রিলোড করুন',
+      icon: RefreshCw,
+      action: onTriggerForceRefresh
+    }] : []),
     {
       key: 'Esc',
       descriptionEn: 'Close Modal / Popups',
@@ -113,6 +126,35 @@ export default function ShortcutsModal({
                 <X size={18} />
               </button>
             </div>
+
+            {/* Sync Info Panel inside Modal */}
+            {lastSyncedTime && (
+              <div className="mx-4 sm:mx-6 mt-4 p-3 rounded-2xl bg-slate-100/80 dark:bg-white/5 border border-slate-200 dark:border-white/10 flex items-center justify-between text-xs">
+                <div className="flex items-center gap-2">
+                  <span className={cn(
+                    "w-2.5 h-2.5 rounded-full shrink-0",
+                    syncStatus === 'synced' ? "bg-emerald-500 animate-pulse" : syncStatus === 'syncing' ? "bg-sky-500 animate-ping" : "bg-amber-500"
+                  )} />
+                  <span className="font-medium text-slate-700 dark:text-slate-300">
+                    {syncStatus === 'synced' ? 'Synced with Sheets' : syncStatus === 'syncing' ? 'Syncing...' : 'Offline Cache'}
+                  </span>
+                  <span className="text-slate-400 dark:text-slate-500 font-mono text-[11px]">({lastSyncedTime})</span>
+                </div>
+
+                {onTriggerForceRefresh && (
+                  <button
+                    onClick={() => {
+                      onTriggerForceRefresh();
+                      onClose();
+                    }}
+                    className="px-2.5 py-1 rounded-xl bg-pink-500 hover:bg-pink-600 text-white font-bold text-[10px] uppercase tracking-wider transition-colors shadow-sm flex items-center gap-1"
+                  >
+                    <RefreshCw size={12} className={cn(syncStatus === 'syncing' && "animate-spin")} />
+                    <span>Force Refresh</span>
+                  </button>
+                )}
+              </div>
+            )}
 
             {/* List of shortcuts */}
             <div className="p-4 sm:p-6 overflow-y-auto space-y-2.5 sm:space-y-3">

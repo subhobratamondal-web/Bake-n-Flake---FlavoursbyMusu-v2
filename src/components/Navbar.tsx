@@ -53,7 +53,7 @@ export default function Navbar() {
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
           >
             <div className="w-12 h-12 bg-white rounded-full flex items-center justify-center overflow-hidden border-2 border-pink-200 shadow-md transform transition-transform group-hover:scale-110 group-hover:rotate-6">
-                   <img src={logoUrl} alt="Logo" className="w-full h-full object-cover scale-150" referrerPolicy="no-referrer" />
+                   <img src={logoUrl || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} alt="Logo" className="w-full h-full object-cover scale-150" referrerPolicy="no-referrer" />
             </div>
             <div className="flex flex-col">
               <span className="font-serif text-xl font-bold text-slate-800 dark:text-white leading-none tracking-tight group-hover:text-pink-600 transition-colors">
