@@ -12,6 +12,7 @@ import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
 import { Language, Translation, GalleryData, VideoItem } from './types';
 import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
+import { fetchGalleryDataDirectFromSheets } from './utils/googleSheetsSync';
 import { flavours, gifts, moreOptionsData } from './constants/data';
 import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon } from 'lucide-react';
 
@@ -462,40 +463,50 @@ export default function App() {
   const fetchGallery = async (silent = false) => {
     if (!silent && (!galleryData.items || galleryData.items.length === 0)) setLoading(true);
 
+    let fetchedSuccessfully = false;
+
     try {
       const response = await fetch('/api/gallery');
-      
-      if (!response.ok) {
-        if (!silent) {
-          console.warn(`Gallery Fetch Error: HTTP ${response.status}`);
+      if (response.ok) {
+        const text = await response.text();
+        const isHtml = text.trim().toLowerCase().startsWith('<!doctype html');
+        if (!isHtml) {
+          const data = JSON.parse(text);
+          if (data && typeof data === 'object' && Array.isArray(data.items) && data.items.length > 0) {
+            setGalleryData(data);
+            try {
+              localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
+            } catch (e) {
+              console.error('LocalStorage save error:', e);
+            }
+            fetchedSuccessfully = true;
+          }
         }
-        return;
       }
+    } catch (e) {
+      // /api/gallery failed (e.g., static hosting on Vercel without Node runtime)
+    }
 
-      const text = await response.text();
-      const isHtml = text.trim().toLowerCase().startsWith('<!doctype html');
-      
-      if (isHtml) {
-        return;
-      }
-
+    // If server API was unavailable or returned non-JSON/HTML on Vercel, fetch directly from Google Sheets!
+    if (!fetchedSuccessfully) {
       try {
-        const data = JSON.parse(text);
-        if (data && typeof data === 'object' && Array.isArray(data.items) && data.items.length > 0) {
-          setGalleryData(data);
+        const directData = await fetchGalleryDataDirectFromSheets();
+        if (directData && Array.isArray(directData.items) && directData.items.length > 0) {
+          setGalleryData(directData);
           try {
-            localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
+            localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(directData));
           } catch (e) {
             console.error('LocalStorage save error:', e);
           }
+          fetchedSuccessfully = true;
         }
       } catch (e) {
-        if (!silent) console.error('Gallery JSON Parse Error:', e);
+        if (!silent) console.warn('Direct Google Sheets sync attempt failed:', e);
       }
-    } catch (error: any) {
-      if (!silent) {
-        console.warn('Gallery connection status: using LocalStorage cache / static fallback');
-      }
+    }
+
+    // Ultimate fallback to existing state or embedded backup if offline / both failed
+    if (!fetchedSuccessfully) {
       setGalleryData(prev => {
         if (prev && Array.isArray(prev.items) && prev.items.length > 0) return prev;
         const fallback = getInitialFallbackGalleryData();
@@ -504,10 +515,10 @@ export default function App() {
         } catch (e) {}
         return fallback;
       });
-    } finally {
-      if (!silent) {
-        setLoading(false);
-      }
+    }
+
+    if (!silent) {
+      setLoading(false);
     }
   };
 
