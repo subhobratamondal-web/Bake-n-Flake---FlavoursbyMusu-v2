@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
+import { getOptimizedImageUrl, convertImageUrl } from '../utils/googleSheetsSync';
 import { cn } from '../lib/utils';
 
 interface OptimizedImageProps extends React.ImgHTMLAttributes<HTMLImageElement> {
@@ -71,14 +71,16 @@ export const OptimizedImage: React.FC<OptimizedImageProps> = ({
   const handleError = () => {
     if (!hasError) {
       setHasError(true);
-      if (currentSrc !== src && src) {
-        setCurrentSrc(src);
+      const converted = convertImageUrl(src);
+      if (currentSrc !== converted && converted) {
+        setCurrentSrc(converted);
       } else {
         setCurrentSrc(fallbackSrc);
       }
     } else {
       setCurrentSrc(fallbackSrc);
     }
+    setIsLoaded(true);
   };
 
   const finalSrc = currentSrc || src || fallbackSrc;

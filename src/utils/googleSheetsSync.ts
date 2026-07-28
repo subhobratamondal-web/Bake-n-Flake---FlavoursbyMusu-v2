@@ -16,7 +16,7 @@ export const CATEGORY_SHEET_NAMES = [
   'Cupcakes and Muffins', 'Pizza & Patties', 'Brownies', 'Combos'
 ];
 
-function convertImageUrl(url: string): string {
+export function convertImageUrl(url: string): string {
   if (!url) return '';
   let cleaned = url.trim();
   if (cleaned.includes('drive.google.com') || cleaned.includes('docs.google.com/uc')) {
@@ -30,20 +30,39 @@ function convertImageUrl(url: string): string {
 
 export function getOptimizedImageUrl(url: string, width = 500, quality = 75): string {
   if (!url) return 'https://i.ibb.co/Xx2kxrrg/LOGO-1.png';
-  const cleaned = url.trim();
-  if (cleaned.startsWith('data:') || cleaned.match(/\.(gif|GIF)($|\?)/i) || cleaned.includes('ezgif')) {
+  let cleaned = convertImageUrl(url.trim());
+
+  // Preserve GIFs, SVGs, Data URIs, and animated media so they never get broken or frozen
+  if (
+    cleaned.startsWith('data:') ||
+    cleaned.match(/\.(gif|GIF|svg|SVG)($|\?)/i) ||
+    cleaned.includes('ezgif') ||
+    cleaned.includes('giphy.com') ||
+    cleaned.includes('tenor.com') ||
+    cleaned.includes('format=gif')
+  ) {
     return cleaned;
   }
+
+  // Google Drive CDN
   if (cleaned.includes('lh3.googleusercontent.com')) {
     if (!cleaned.includes('=w')) {
-      return `${cleaned}=w${width}-rw`;
+      return `${cleaned}=w${width}`;
     }
     return cleaned;
   }
-  if (cleaned.includes('images.weserv.nl')) {
+
+  // Direct CDN links (ImgBB, Imgur, Weserv)
+  if (cleaned.includes('i.ibb.co') || cleaned.includes('i.imgur.com') || cleaned.includes('images.weserv.nl')) {
     return cleaned;
   }
-  return `https://images.weserv.nl/?url=${encodeURIComponent(cleaned)}&w=${width}&q=${quality}&output=webp`;
+
+  // Fallback weserv proxy for raw external HTTP/HTTPS images
+  if (cleaned.startsWith('http://') || cleaned.startsWith('https://')) {
+    return `https://images.weserv.nl/?url=${encodeURIComponent(cleaned)}&w=${width}&q=${quality}&output=webp`;
+  }
+
+  return cleaned;
 }
 
 function getYoutubeThumbnail(url: string): string {
