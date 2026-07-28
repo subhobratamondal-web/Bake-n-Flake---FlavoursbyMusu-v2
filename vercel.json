@@ -4,6 +4,22 @@
   "outputDirectory": "dist",
   "rewrites": [
     {
+      "source": "/api/gallery",
+      "destination": "/api/gallery.ts"
+    },
+    {
+      "source": "/api/server-date",
+      "destination": "/api/server-date.ts"
+    },
+    {
+      "source": "/api/health",
+      "destination": "/api/health.ts"
+    },
+    {
+      "source": "/api/order",
+      "destination": "/api/order.ts"
+    },
+    {
       "source": "/api/(.*)",
       "destination": "/api/index.ts"
     },
@@ -13,3 +29,4 @@
     }
   ]
 }
+

@@ -15,16 +15,22 @@ const SPREADSHEET_ID = '1vZsYmZzxu653U4T6O-_S0i2dazAU_VJKBRYwdgAmXSw';
 app.use(express.json({ limit: '10mb' }));
 app.use(express.urlencoded({ limit: '10mb', extended: true }));
 
-// Request logger for debugging
+// Request logger and Vercel URL normalization middleware
 app.use((req, res, next) => {
-  if (req.url.startsWith('/api')) {
+  // Extract original invoke path on Vercel
+  const invokePath = (req.headers['x-invoke-path'] as string) || (req.headers['x-forwarded-uri'] as string);
+  if (invokePath && invokePath.startsWith('/api')) {
+    req.url = invokePath;
+  }
+  
+  if (req.url.startsWith('/api') || req.url.includes('gallery') || req.url.includes('server-date')) {
     console.log(`[API REQUEST] ${req.method} ${req.url}`);
   }
   next();
 });
 
-// Move API Routes to the top
-app.get('/api/server-date', (req, res) => {
+// Move API Routes to the top with multi-path support
+app.get(['/api/server-date', '/server-date'], (req, res) => {
   res.json({ 
     date: new Date().toLocaleDateString('en-GB', { 
       day: 'numeric', 
@@ -35,7 +41,7 @@ app.get('/api/server-date', (req, res) => {
   });
 });
 
-app.get('/api/health', (req, res) => {
+app.get(['/api/health', '/health'], (req, res) => {
   res.json({ 
     status: 'ok', 
     timestamp: new Date().toISOString(), 
@@ -44,27 +50,31 @@ app.get('/api/health', (req, res) => {
   });
 });
 
-app.get('/api/test', (req, res) => {
+app.get(['/api/test', '/test'], (req, res) => {
   res.json({ message: 'Server is alive', timestamp: new Date().toISOString() });
 });
 
-app.get('/api/gallery', async (req, res) => {
+app.get(['/api/gallery', '/gallery'], async (req, res) => {
   try {
-    if (!cachedGallery) {
-      console.log('[API] cachedGallery is empty, fetching initial sync...');
-      await runInitialSync();
+    if (!cachedGallery || !cachedGallery.items || cachedGallery.items.length === 0) {
+      console.log('[API] cachedGallery is empty or uninitialized');
+      if (process.env.VERCEL === '1') {
+        cachedGallery = JSON.parse(JSON.stringify(FALLBACK_DATA));
+      } else {
+        await runInitialSync();
+      }
     }
     if (!cachedGallery) {
-      return res.status(500).json({ error: 'Gallery data not initialized' });
+      cachedGallery = JSON.parse(JSON.stringify(FALLBACK_DATA));
     }
     res.json(cachedGallery);
   } catch (err) {
     console.error('[API] Gallery route error:', err);
-    res.status(500).json({ error: 'Internal server error during gallery fetch' });
+    res.json(FALLBACK_DATA);
   }
 });
 
-app.post('/api/order', async (req, res) => {
+app.post(['/api/order', '/order'], async (req, res) => {
   try {
     const { name, deliveryDate, flavor, weight, message, requirements } = req.body;
     
@@ -98,6 +108,21 @@ app.post('/api/order', async (req, res) => {
     console.error('Order API error:', error);
     res.status(500).json({ status: 'error', message: error.toString() });
   }
+});
+
+// Route matcher for /api/index when Vercel rewrites to /api/index
+app.all('/api/index', (req, res, next) => {
+  const targetPath = (req.query.path as string) || (req.headers['x-invoke-path'] as string) || '';
+  if (targetPath.includes('gallery') || req.url.includes('gallery')) {
+    return res.json(cachedGallery || FALLBACK_DATA);
+  }
+  if (targetPath.includes('server-date') || req.url.includes('server-date')) {
+    return res.json({ 
+      date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+      year: new Date().getFullYear()
+    });
+  }
+  res.json(cachedGallery || FALLBACK_DATA);
 });
 
 // Fallback for missing API routes to prevent HTML response
