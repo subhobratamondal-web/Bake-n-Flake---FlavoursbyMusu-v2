@@ -3,7 +3,7 @@
 @custom-variant dark (&:where(.dark, .dark *));
 
 @theme {
-  --color-matte: #0a1118;
+  --color-matte: #050505;
   --color-ash: #fdf2f8;
   --color-pink-glass: rgba(255, 255, 255, 0.7);
   --color-grey-glass: rgba(243, 244, 246, 0.5);
@@ -99,7 +99,7 @@
     scroll-behavior: smooth;
   }
   body {
-    @apply m-0 p-0 overflow-x-hidden w-full bg-slate-50 dark:bg-[#0a0a0a] transition-colors duration-500;
+    @apply m-0 p-0 overflow-x-hidden w-full bg-slate-50 dark:bg-[#050505] transition-colors duration-500;
     min-height: 100vh;
     -webkit-overflow-scrolling: touch;
     text-rendering: optimizeLegibility;

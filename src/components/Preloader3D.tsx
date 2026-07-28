@@ -40,7 +40,7 @@ export default function Preloader3D({ logoUrl, lang, theme }: Preloader3DProps) 
       className={cn(
         "fixed inset-0 z-[9999] flex flex-col items-center justify-center p-4 overflow-hidden select-none select-none select-none",
         theme === 'dark'
-          ? "bg-[#09050d] bg-gradient-to-br from-[#09050d] via-[#140a1d] to-[#25081a]"
+          ? "bg-[#050505] bg-gradient-to-br from-[#050505] via-[#0a0a0a] to-[#120814]"
           : "bg-[#fffafd] bg-gradient-to-br from-[#fffafd] via-[#fff1f7] to-[#fae8f3]"
       )}
     >

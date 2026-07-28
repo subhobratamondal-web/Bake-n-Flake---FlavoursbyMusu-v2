@@ -262,60 +262,60 @@ export const FULL_GALLERY_BACKUP = {
   ],
   "YouTube Video": [
     {
-      "vid": "yt_1",
       "nameEn": "CAKES PLAYLIST",
-      "nameBn": "CAKES PLAYLIST",
+      "nameBn": "https://youtu.be/MiaktUt8SfQ?list=PLt-w6cASEiNj3lRXBIpS6mKd_a6kH8g4_",
+      "vid": "https://www.youtube.com/embed/MiaktUt8SfQ?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/MiaktUt8SfQ?list=PLt-w6cASEiNj3lRXBIpS6mKd_a6kH8g4_",
       "img": "https://i.ibb.co/9H9HtkrV/Kitkat-2.png"
     },
     {
-      "vid": "yt_2",
       "nameEn": "PIZZAS PLAYLIST",
-      "nameBn": "PIZZAS PLAYLIST",
+      "nameBn": "https://youtu.be/nwrkIVJSBso?list=PLt-w6cASEiNitLmILlXM0wxu3Qtmd12Mi",
+      "vid": "https://www.youtube.com/embed/nwrkIVJSBso?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/nwrkIVJSBso?list=PLt-w6cASEiNitLmILlXM0wxu3Qtmd12Mi",
       "img": "https://i.ibb.co/tpccgyqx/ezgif-com-crop.gif"
     },
     {
-      "vid": "yt_3",
       "nameEn": "CHOCOLATE PLAYLIST",
-      "nameBn": "CHOCOLATE PLAYLIST",
+      "nameBn": "https://youtu.be/Z-fC35bu3Wo?list=PLt-w6cASEiNgkIxf4HM6OnJNywrw73TdT",
+      "vid": "https://www.youtube.com/embed/Z-fC35bu3Wo?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/Z-fC35bu3Wo?list=PLt-w6cASEiNgkIxf4HM6OnJNywrw73TdT",
       "img": "https://i.ibb.co/P7m3T7B/Customized-Chocolates-1.jpg"
     },
     {
-      "vid": "yt_4",
       "nameEn": "DONUT PLAYLIST",
-      "nameBn": "DONUT PLAYLIST",
+      "nameBn": "https://youtu.be/L19zCjbSV5g?list=PLt-w6cASEiNgM79eHUYkOMeXlp13Eu8HS",
+      "vid": "https://www.youtube.com/embed/L19zCjbSV5g?autoplay=1&rel=0&showinfo=0&controls=1",
       "url": "https://youtu.be/L19zCjbSV5g?list=PLt-w6cASEiNgM79eHUYkOMeXlp13Eu8HS",
       "img": "https://i.ibb.co/jkNm1Zq8/Cupcakes-1.jpg"
     }
   ],
   "Facebook Video": [
     {
-      "vid": "fb_1",
       "nameEn": "A Glimpse of New Recipes",
-      "nameBn": "A Glimpse of New Recipes",
+      "nameBn": "https://vimeo.com/1188942087?fl=pl&fe=cm",
+      "vid": "https://player.vimeo.com/video/1188942087?autoplay=1",
       "url": "https://vimeo.com/1188942087?fl=pl&fe=cm",
       "img": "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg"
     },
     {
-      "vid": "fb_2",
       "nameEn": "Cake Decoration Tutorial",
-      "nameBn": "Cake Decoration Tutorial",
+      "nameBn": "https://vimeo.com/1188940101?fl=pl&fe=cm",
+      "vid": "https://player.vimeo.com/video/1188940101?autoplay=1",
       "url": "https://vimeo.com/1188940101?fl=pl&fe=cm",
       "img": "https://i.ibb.co/XZPM9BkH/WEEDING-CAKE-2.png"
     },
     {
-      "vid": "fb_3",
       "nameEn": "Tutorials Cake Decoration Tutorial",
-      "nameBn": "Tutorials Cake Decoration Tutorial",
+      "nameBn": "https://vimeo.com/1188937051?fl=pl&fe=cm",
+      "vid": "https://player.vimeo.com/video/1188937051?autoplay=1",
       "url": "https://vimeo.com/1188937051?fl=pl&fe=cm",
       "img": "https://i.ibb.co/dwQX9L2g/CAKESPLAYLIST-ezgif-com-speed.gif"
     },
     {
-      "vid": "fb_4",
       "nameEn": "Yummy Choco Delight",
-      "nameBn": "Yummy Choco Delight",
+      "nameBn": "https://vimeo.com/1188940142?fl=pl&fe=cm",
+      "vid": "https://player.vimeo.com/video/1188940142?autoplay=1",
       "url": "https://vimeo.com/1188940142?fl=pl&fe=cm",
       "img": "https://i.ibb.co/LDrh9zSg/brownie-2.png"
     }
@@ -403,7 +403,8 @@ export const FULL_GALLERY_BACKUP = {
   "Coffee Mocha": [
     "https://i.ibb.co/YFwZjDZc/COFFEE-CAKE-COVER.png",
     "https://i.ibb.co/4w2jyMmB/Coffee-Cake-1.png",
-    "https://i.ibb.co/gbzYzjYK/Coffee-Cake-2.png"
+    "https://i.ibb.co/gbzYzjYK/Coffee-Cake-2.png",
+    "https://i.ibb.co/8gNWqC0x/755350881-1634264338712177-8571544827257169104-n.jpg"
   ],
   "Rasmalai Cake": [
     "https://i.ibb.co/4RBygSqR/Rasmalai-Cake-1.png",
@@ -645,11 +646,5 @@ export const FULL_GALLERY_BACKUP = {
     "https://i.pinimg.com/736x/0e/74/6d/0e746d0cd978b893db6944b1d6239b17.jpg",
     "https://i.pinimg.com/1200x/e3/02/d9/e302d9c06ef199a4682dc6906da9275e.jpg",
     "https://i.pinimg.com/736x/74/df/97/74df97c58814ebee1a122845e42efbbd.jpg"
-  ],
-  "Header": [
-    "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
-  ],
-  "Footer": [
-    "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
   ]
 };

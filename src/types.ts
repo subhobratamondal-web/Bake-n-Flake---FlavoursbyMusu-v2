@@ -78,6 +78,18 @@ export interface BotIntent {
 
 export type Language = 'en' | 'bn';
 
+export type WeatherCondition = 'sunny' | 'rainy' | 'cloudy' | 'cool';
+
+export interface WeatherData {
+  condition: WeatherCondition;
+  temp: number; // Celsius
+  locationName: string;
+  isAuto: boolean;
+  labelEn: string;
+  labelBn: string;
+  icon: string;
+}
+
 export interface Translation {
   brand: string;
   tag: string;

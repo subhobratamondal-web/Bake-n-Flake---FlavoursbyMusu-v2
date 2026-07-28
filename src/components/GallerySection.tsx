@@ -2,6 +2,7 @@ import React, { useContext, useMemo, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useInView } from 'motion/react';
 import { useSwipeable } from 'react-swipeable';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 const useImagePreloader = (items: any[], currentIndex: number | null, itemsToShow: number = 1) => {
   useEffect(() => {
@@ -446,12 +447,21 @@ export default function GallerySection() {
                        >
                        <div className="bg-white dark:bg-white/5 rounded-[2rem] overflow-hidden shadow-xl border-4 border-white dark:border-white/10 group/card transition-all duration-500 relative aspect-[4/5] cursor-pointer bg-slate-100 dark:bg-black/30">
                           <img 
-                            src={item.img || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"} 
+                            src={getOptimizedImageUrl(item.img, 500, 75)} 
                             alt={item.nameEn}
                             className="w-full h-full object-cover transition-transform duration-700 group-hover/card:scale-110"
                             referrerPolicy="no-referrer"
                             loading="lazy"
                             decoding="async"
+                            onError={(e) => {
+                              const target = e.currentTarget;
+                              if (!target.dataset.triedOriginal) {
+                                target.dataset.triedOriginal = 'true';
+                                target.src = item.img || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                              } else {
+                                target.src = "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                              }
+                            }}
                             style={{ backgroundColor: 'transparent', backgroundImage: 'url("data:image/svg+xml,%3Csvg xmlns=\'http://www.w3.org/2000/svg\' viewBox=\'0 0 400 500\'%3E%3Crect width=\'400\' height=\'500\' fill=\'%23a0aec0\' fill-opacity=\'0.1\'/%3E%3C/svg%3E")' }}
                           />
                           <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent flex flex-col justify-end p-6">
@@ -636,12 +646,19 @@ export default function GallerySection() {
                             stiffness: 260, 
                             damping: 20 
                           }}
-                          src={items[lightboxIndex].img}
+                          src={getOptimizedImageUrl(items[lightboxIndex].img, 1000, 85)}
                           alt={items[lightboxIndex].nameEn}
                           className="w-full h-full object-cover"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                           decoding="async"
+                          onError={(e) => {
+                            const target = e.currentTarget;
+                            if (!target.dataset.triedOriginal) {
+                              target.dataset.triedOriginal = 'true';
+                              target.src = items[lightboxIndex]?.img || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                            }
+                          }}
                         />
                       </TransformComponent>
                     </TransformWrapper>

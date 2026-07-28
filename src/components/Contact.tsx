@@ -83,8 +83,9 @@ export default function Contact() {
                  <div className="w-12 h-0.5 bg-gradient-to-r from-transparent via-pink-500 to-transparent" />
               </div>
 
-              <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-6 max-w-5xl mx-auto">
-                {socialLinks.map((social, i) => {
+              {/* Row 1: 4 Icons */}
+              <div className="grid grid-cols-2 sm:grid-cols-4 gap-4 md:gap-6 max-w-4xl mx-auto mb-4 md:mb-6">
+                {socialLinks.slice(0, 4).map((social, i) => {
                   const Icon = social.icon;
                   return (
                     <motion.a
@@ -93,14 +94,42 @@ export default function Contact() {
                       target={social.href.startsWith('#') ? '_self' : '_blank'}
                       initial={{ opacity: 0, y: 20 }}
                       whileInView={{ opacity: 1, y: 0 }}
-                      transition={{ delay: i * 0.1 }}
+                      transition={{ delay: i * 0.08 }}
                       viewport={{ once: true }}
                       className={cn(
-                         "flex flex-col items-center justify-center gap-3 p-6 rounded-[2.5rem] glass-3d border border-white/40 dark:border-white/10 transition-all hover:scale-105 active:scale-95 group min-h-[140px]",
+                         "flex flex-col items-center justify-center gap-3 p-5 md:p-6 rounded-[2.5rem] glass-3d border border-white/40 dark:border-white/10 transition-all hover:scale-105 active:scale-95 group min-h-[130px] md:min-h-[140px]",
                          social.className
                       )}
                     >
-                      <div className={cn("w-14 h-14 flex items-center justify-center transition-all duration-300 group-hover:scale-110", social.color)}>
+                      <div className={cn("w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-all duration-300 group-hover:scale-110", social.color)}>
+                         {social.isBrand ? <Icon /> : <Icon size={32} className="stroke-[1.5]" />}
+                      </div>
+                      <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 tracking-[0.2em] uppercase group-hover:text-slate-800 dark:group-hover:text-white transition-colors">{social.label}</span>
+                    </motion.a>
+                  );
+                })}
+              </div>
+
+              {/* Row 2: 3 Icons Centered */}
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-4 md:gap-6 max-w-3xl mx-auto justify-center">
+                {socialLinks.slice(4).map((social, i) => {
+                  const Icon = social.icon;
+                  return (
+                    <motion.a
+                      key={i + 4}
+                      href={social.href}
+                      target={social.href.startsWith('#') ? '_self' : '_blank'}
+                      initial={{ opacity: 0, y: 20 }}
+                      whileInView={{ opacity: 1, y: 0 }}
+                      transition={{ delay: (i + 4) * 0.08 }}
+                      viewport={{ once: true }}
+                      className={cn(
+                         "flex flex-col items-center justify-center gap-3 p-5 md:p-6 rounded-[2.5rem] glass-3d border border-white/40 dark:border-white/10 transition-all hover:scale-105 active:scale-95 group min-h-[130px] md:min-h-[140px]",
+                         social.className,
+                         i === 2 ? "col-span-2 sm:col-span-1 max-w-[200px] sm:max-w-none mx-auto w-full" : ""
+                      )}
+                    >
+                      <div className={cn("w-12 h-12 md:w-14 md:h-14 flex items-center justify-center transition-all duration-300 group-hover:scale-110", social.color)}>
                          {social.isBrand ? <Icon /> : <Icon size={32} className="stroke-[1.5]" />}
                       </div>
                       <span className="text-[10px] font-black text-slate-500 dark:text-slate-400 tracking-[0.2em] uppercase group-hover:text-slate-800 dark:group-hover:text-white transition-colors">{social.label}</span>

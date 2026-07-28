@@ -8,6 +8,7 @@ import { cn } from '../lib/utils';
 import { Product } from '../types';
 import { playSound } from '../lib/sounds';
 import { ProductSkeleton } from './common/Skeleton';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 const linkMap: Record<string, string> = {
   'Chocolate Cakes': 'https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png',
@@ -516,7 +517,7 @@ export default function Menu() {
                     {/* Placeholder skeleton that stays below the image */}
                     <div className="absolute inset-0 bg-pink-100 dark:bg-zinc-800 animate-pulse -z-10" />
                     <img
-                      src={getProductImage(item)}
+                      src={getOptimizedImageUrl(getProductImage(item), 500, 75)}
                       alt={item.nameEn}
                       className={cn(
                         "w-full h-full object-cover transition-transform duration-700 lg:group-hover:scale-110 relative z-10",
@@ -525,6 +526,15 @@ export default function Menu() {
                       referrerPolicy="no-referrer"
                       loading="lazy"
                       decoding="async"
+                      onError={(e) => {
+                        const target = e.currentTarget;
+                        if (!target.dataset.triedOriginal) {
+                          target.dataset.triedOriginal = 'true';
+                          target.src = getProductImage(item) || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png";
+                        } else {
+                          target.src = "https://i.ibb.co/Xx2kxrrg/LOGO-1.png";
+                        }
+                      }}
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 lg:group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3">
                       <div className="px-6 py-2 rounded-full glass-3d text-[10px] font-black text-white uppercase tracking-[0.2em] translate-y-4 group-hover:translate-y-0 transition-transform">
@@ -683,12 +693,21 @@ export default function Menu() {
                     >
                       <div className="absolute inset-0 w-full h-full animate-pulse bg-pink-200/50 dark:bg-black/20" />
                       <img 
-                        src={getProductImages(selectedProduct.nameEn)[currentImageIndex] || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png"}
+                        src={getOptimizedImageUrl(getProductImages(selectedProduct.nameEn)[currentImageIndex] || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png", 900, 85)}
                         alt="Product"
                         className="w-full h-full object-cover pointer-events-none relative z-10"
                         referrerPolicy="no-referrer"
                         loading="lazy"
                         decoding="async"
+                        onError={(e) => {
+                          const target = e.currentTarget;
+                          if (!target.dataset.triedOriginal) {
+                            target.dataset.triedOriginal = 'true';
+                            target.src = getProductImages(selectedProduct.nameEn)[currentImageIndex] || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png";
+                          } else {
+                            target.src = "https://i.ibb.co/Xx2kxrrg/LOGO-1.png";
+                          }
+                        }}
                       />
                       <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent pointer-events-none z-20" />
                     </motion.div>

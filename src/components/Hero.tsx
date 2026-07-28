@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
 import { Sparkles, ShoppingBag, Star, Clock, Heart, ChevronLeft, ChevronRight, Palette } from 'lucide-react';
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 import { playSound } from '../lib/sounds';
 
@@ -131,12 +132,19 @@ export default function Hero() {
               {/* Back Layer 1 - Shows the next image, NO ROTATION */}
               <div className="absolute inset-0 translate-x-6 translate-y-6 rounded-[3rem] md:rounded-[4rem] overflow-hidden border-2 border-white/10 shadow-2xl bg-black dark:bg-[#080808]">
                  <img 
-                   src={heroImages[(currentImageIndex + 1) % heroImages.length]} 
+                   src={getOptimizedImageUrl(heroImages[(currentImageIndex + 1) % heroImages.length], 600, 75)} 
                    className="w-full h-full object-cover opacity-20 blur-[2px]"
                    alt="Next Preview"
                    referrerPolicy="no-referrer"
                    loading="lazy"
                    decoding="async"
+                   onError={(e) => {
+                     const target = e.currentTarget;
+                     if (!target.dataset.triedOriginal) {
+                       target.dataset.triedOriginal = 'true';
+                       target.src = heroImages[(currentImageIndex + 1) % heroImages.length] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                     }
+                   }}
                  />
               </div>
 
@@ -150,12 +158,19 @@ export default function Hero() {
                   className="absolute inset-0 z-10 gpu-accelerated shadow-[0_30px_60px_rgba(0,0,0,0.5)] rounded-[3rem] md:rounded-[4rem] overflow-hidden border-[6px] border-white/90 dark:border-white/10 shadow-inner"
                 >
                   <img
-                    src={heroImages[currentImageIndex]}
+                    src={getOptimizedImageUrl(heroImages[currentImageIndex], 800, 80)}
                     alt="Signature Cake"
                     className="w-full h-full object-cover"
                     referrerPolicy="no-referrer"
                     loading="eager"
                     decoding="async"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.dataset.triedOriginal) {
+                        target.dataset.triedOriginal = 'true';
+                        target.src = heroImages[currentImageIndex] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                      }
+                    }}
                   />
                   <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-transparent pointer-events-none" />
                 </motion.div>

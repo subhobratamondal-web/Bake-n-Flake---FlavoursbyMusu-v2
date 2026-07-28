@@ -3,6 +3,7 @@ import { Menu, X, Sun, Moon, Globe, ShoppingBag, BookOpen, Image as ImageIcon, P
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 import { motion, AnimatePresence } from 'motion/react';
+import WeatherWidget from './WeatherWidget';
 
 export default function Navbar() {
   const { lang, setLang, t, theme, toggleTheme, galleryData, setOrderModalOpen } = useContext(AppContext);
@@ -87,6 +88,7 @@ export default function Navbar() {
             </button>
 
             <div className="flex items-center gap-3 pl-6 border-l border-slate-200 dark:border-white/10">
+              <WeatherWidget />
               <button
                 onClick={toggleTheme}
                 className="p-2.5 rounded-full glass-3d hover:bg-pink-500 hover:text-white text-slate-600 dark:text-slate-300 transition-all transform hover:rotate-12"
@@ -129,7 +131,7 @@ export default function Navbar() {
               animate={{ x: 0 }}
               exit={{ x: '100%' }}
               transition={{ type: 'spring', damping: 25, stiffness: 200 }}
-              className="fixed top-0 right-0 bottom-0 w-[80%] sm:w-[350px] bg-white dark:bg-[#1a1a1a] z-[110] md:hidden shadow-2xl border-l border-white/10 overflow-y-auto"
+              className="fixed top-0 right-0 bottom-0 w-[80%] sm:w-[350px] bg-white dark:bg-[#0a0a0a] z-[110] md:hidden shadow-2xl border-l border-white/10 overflow-y-auto"
             >
               <div className="p-8 pt-24 flex flex-col gap-4">
                 <div className="flex flex-col gap-2 mb-6">
@@ -155,6 +157,9 @@ export default function Navbar() {
                 <div className="h-px bg-slate-200 dark:bg-white/10 my-4" />
                 
                 <div className="flex flex-col gap-4">
+                  <div className="flex justify-center my-1">
+                    <WeatherWidget />
+                  </div>
                   <div className="grid grid-cols-2 gap-3">
                     <button onClick={toggleTheme} className="flex flex-col items-center justify-center gap-2 h-20 rounded-2xl bg-slate-50 dark:bg-white/5 text-slate-800 dark:text-white font-bold transition-all active:scale-95 border border-slate-200 dark:border-white/10">
                       {theme === 'dark' ? <Sun size={20} className="text-yellow-500" /> : <Moon size={20} className="text-blue-500" />}

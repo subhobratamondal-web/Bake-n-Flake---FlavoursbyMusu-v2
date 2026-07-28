@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'motion/react';
 import { Heart, Sparkles } from 'lucide-react';
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
+import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 
 export default function Story() {
   const { t, galleryData } = useContext(AppContext);
@@ -41,11 +42,19 @@ export default function Story() {
                     animate={{ x: 0 }}
                     exit={{ x: currentSlide % 2 === 0 ? "-100%" : "100%" }}
                     transition={{ duration: 0.6, ease: [0.33, 1, 0.68, 1] }}
-                    src={storyImages[currentSlide]}
+                    src={getOptimizedImageUrl(storyImages[currentSlide], 800, 80)}
                     alt="Our Story" 
                     className="absolute inset-0 w-full h-full object-cover"
                     decoding="async"
+                    loading="lazy"
                     referrerPolicy="no-referrer"
+                    onError={(e) => {
+                      const target = e.currentTarget;
+                      if (!target.dataset.triedOriginal) {
+                        target.dataset.triedOriginal = 'true';
+                        target.src = storyImages[currentSlide] || "https://i.ibb.co/XkYN11bL/PROFILE.jpg";
+                      }
+                    }}
                   />
                 </AnimatePresence>
              </div>

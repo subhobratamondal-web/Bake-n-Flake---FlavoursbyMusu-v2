@@ -19,13 +19,60 @@ export const CATEGORY_SHEET_NAMES = [
 function convertImageUrl(url: string): string {
   if (!url) return '';
   let cleaned = url.trim();
-  if (cleaned.includes('drive.google.com')) {
+  if (cleaned.includes('drive.google.com') || cleaned.includes('docs.google.com/uc')) {
     const fileIdMatch = cleaned.match(/\/d\/([a-zA-Z0-9_-]+)/) || cleaned.match(/id=([a-zA-Z0-9_-]+)/);
     if (fileIdMatch && fileIdMatch[1]) {
       return `https://lh3.googleusercontent.com/d/${fileIdMatch[1]}`;
     }
   }
   return cleaned;
+}
+
+export function getOptimizedImageUrl(url: string, width = 500, quality = 75): string {
+  if (!url) return 'https://i.ibb.co/XkYN11bL/PROFILE.jpg';
+  const cleaned = url.trim();
+  if (cleaned.startsWith('data:') || cleaned.match(/\.(gif|GIF)($|\?)/)) {
+    return cleaned;
+  }
+  if (cleaned.includes('lh3.googleusercontent.com')) {
+    if (!cleaned.includes('=w')) {
+      return `${cleaned}=w${width}-rw`;
+    }
+    return cleaned;
+  }
+  if (cleaned.includes('images.weserv.nl')) {
+    return cleaned;
+  }
+  return `https://images.weserv.nl/?url=${encodeURIComponent(cleaned)}&w=${width}&q=${quality}&output=webp`;
+}
+
+function getYoutubeThumbnail(url: string): string {
+  if (!url) return '';
+  const match = url.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/v\/|youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (match && match[1]) {
+    return `https://img.youtube.com/vi/${match[1]}/hqdefault.jpg`;
+  }
+  return '';
+}
+
+function formatEmbedUrl(url: string): string {
+  if (!url) return '';
+  const trimmed = String(url).trim();
+  if (trimmed.match(/\.(gif|GIF)($|\?)/)) return trimmed;
+  const ytMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com\/watch\?v=|youtu\.be\/|youtube\.com\/embed\/|youtube\.com\/shorts\/|youtu\.be\/)([a-zA-Z0-9_-]{11})/);
+  if (ytMatch && ytMatch[1]) {
+    return `https://www.youtube.com/embed/${ytMatch[1]}?autoplay=1&rel=0&showinfo=0&controls=1`;
+  }
+  if (trimmed.includes('facebook.com')) {
+    return `https://www.facebook.com/plugins/video.php?href=${encodeURIComponent(trimmed)}&show_text=0&autoplay=1&mute=1`;
+  }
+  if (trimmed.includes('vimeo.com')) {
+    const vimeoMatch = trimmed.match(/(?:https?:\/\/)?(?:www\.)?vimeo\.com\/(\d+)/);
+    if (vimeoMatch && vimeoMatch[1]) {
+      return `https://player.vimeo.com/video/${vimeoMatch[1]}?autoplay=1`;
+    }
+  }
+  return trimmed;
 }
 
 async function fetchSheetRows(sheetName: string): Promise<string[][]> {
@@ -94,16 +141,24 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
       const dataRows = ytRows.slice(1);
       dataRows.forEach((row, idx) => {
         const titleEn = row[0] || `Video ${idx + 1}`;
-        const titleBn = titleEn;
-        const videoUrl = row[1] || '';
-        const imgUrl = convertImageUrl(row[2] || '');
-        if (videoUrl || imgUrl) {
+        const rawVid = row[1] || '';
+        const fallbackImg = row[2] || '';
+        const titleBn = row[3] || titleEn;
+        let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
+        if (!finalImg) {
+          finalImg = getYoutubeThumbnail(rawVid || fallbackImg);
+        }
+        if (!finalImg) {
+          finalImg = 'https://i.ibb.co/XkYN11bL/PROFILE.jpg';
+        }
+        const isVideo = rawVid.includes('youtube.com') || rawVid.includes('youtu.be') || rawVid.includes('facebook.com') || rawVid.includes('vimeo.com') || rawVid.match(/\.mp4($|\?)/);
+        if (titleEn || rawVid || fallbackImg) {
           (result['YouTube Video'] as VideoItem[]).push({
-            vid: `yt_${idx + 1}`,
+            vid: isVideo ? formatEmbedUrl(rawVid) : formatEmbedUrl(fallbackImg),
             nameEn: titleEn,
             nameBn: titleBn,
-            url: videoUrl,
-            img: imgUrl
+            url: isVideo ? rawVid : (fallbackImg || rawVid),
+            img: finalImg
           });
         }
       });
@@ -114,16 +169,24 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
       const dataRows = fbRows.slice(1);
       dataRows.forEach((row, idx) => {
         const titleEn = row[0] || `Video ${idx + 1}`;
-        const titleBn = titleEn;
-        const videoUrl = row[1] || '';
-        const imgUrl = convertImageUrl(row[2] || '');
-        if (videoUrl || imgUrl) {
+        const rawVid = row[1] || '';
+        const fallbackImg = row[2] || '';
+        const titleBn = row[3] || titleEn;
+        let finalImg = fallbackImg ? convertImageUrl(fallbackImg) : '';
+        if (!finalImg) {
+          finalImg = getYoutubeThumbnail(rawVid || fallbackImg);
+        }
+        if (!finalImg) {
+          finalImg = 'https://i.ibb.co/XkYN11bL/PROFILE.jpg';
+        }
+        const isVideo = rawVid.includes('youtube.com') || rawVid.includes('youtu.be') || rawVid.includes('facebook.com') || rawVid.includes('vimeo.com') || rawVid.match(/\.mp4($|\?)/);
+        if (titleEn || rawVid || fallbackImg) {
           (result['Facebook Video'] as VideoItem[]).push({
-            vid: `fb_${idx + 1}`,
+            vid: isVideo ? formatEmbedUrl(rawVid) : formatEmbedUrl(fallbackImg),
             nameEn: titleEn,
             nameBn: titleBn,
-            url: videoUrl,
-            img: imgUrl
+            url: isVideo ? rawVid : (fallbackImg || rawVid),
+            img: finalImg
           });
         }
       });

@@ -12,9 +12,10 @@ import Preloader3D from './components/Preloader3D';
 import ShortcutsModal from './components/ShortcutsModal';
 import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
-import { Language, Translation, GalleryData, VideoItem } from './types';
+import { Language, Translation, GalleryData, VideoItem, WeatherCondition, WeatherData } from './types';
 import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
 import { fetchGalleryDataDirectFromSheets } from './utils/googleSheetsSync';
+import { WEATHER_THEMES, fetchCurrentWeather } from './utils/weatherTheme';
 import { flavours, gifts, moreOptionsData } from './constants/data';
 import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard } from 'lucide-react';
 
@@ -26,7 +27,8 @@ import { cn } from './lib/utils';
 import { Toast } from './components/common/Toast';
 import ChatBot from './components/ChatBot';
 
-const NeonParticles = () => {
+const NeonParticles = React.memo(() => {
+  const { weatherData } = React.useContext(AppContext);
   const [isMobile, setIsMobile] = useState(false);
 
   useEffect(() => {
@@ -36,177 +38,131 @@ const NeonParticles = () => {
     return () => window.removeEventListener('resize', checkMobile);
   }, []);
 
-  const particlesCount = isMobile ? 15 : 35; 
-  const particles = Array.from({ length: particlesCount });
-  const Icons = [Heart, Star, Snowflake];
-  
+  const condition = weatherData?.condition || 'sunny';
+  const theme = WEATHER_THEMES[condition];
+
+  const particleData = React.useMemo(() => {
+    const count = isMobile ? 8 : 16;
+    const Icons = [Heart, Star, Snowflake];
+    const colorClasses = theme.particleColors;
+
+    return Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      size: (i % 3 === 0 ? 12 : i % 2 === 0 ? 10 : 8) + (isMobile ? 0 : 4),
+      left: ((i * 17 + 5) % 92) + 4,
+      delay: -(i * 1.5),
+      duration: 14 + (i % 5) * 2,
+      drift: (i % 2 === 0 ? 15 : -15),
+      Icon: Icons[i % Icons.length],
+      colorClass: colorClasses[i % colorClasses.length],
+    }));
+  }, [isMobile, theme]);
+
   return (
-    <div className="absolute inset-0 z-[0] pointer-events-none overflow-hidden opacity-70 md:opacity-100">
-      {particles.map((_, i) => {
-        const size = Math.random() * (isMobile ? 8 : 16) + 6; // Smaller sizes
-        const left = Math.random() * 100;
-        const delay = Math.random() * -20; // Negative delay so they are already falling
-        const duration = Math.random() * 8 + (isMobile ? 12 : 18); // Smooth and slightly slower falling
-        const drift = (Math.random() - 0.5) * 30; // Less horizontal drift for a smoother rain effect
-        const Icon = Icons[i % Icons.length];
-        const isHeart = Icon === Heart;
-        const isStar = Icon === Star;
-        const isSnow = Icon === Snowflake;
-        const rotateDuration = Math.random() * 5 + 5;
-        const blinkDuration = Math.random() * 2 + 1.5; // For blinking effect
-
-        // Dynamic classes combinations - multi-color + natural blur + glow
-        const colorClasses = [
-          "text-pink-400 dark:text-pink-500 blur-[1px] drop-shadow-[0_0_10px_rgba(244,114,182,0.8)] dark:drop-shadow-[0_0_15px_rgba(236,72,153,1)]",
-          "text-blue-300 dark:text-cyan-400 blur-[1.5px] md:blur-[2px] drop-shadow-[0_0_10px_rgba(147,197,253,0.8)] dark:drop-shadow-[0_0_15px_rgba(34,211,238,1)]",
-          "text-amber-300 dark:text-yellow-400 blur-[1px] md:blur-[1.5px] drop-shadow-[0_0_10px_rgba(252,211,77,0.8)] dark:drop-shadow-[0_0_15px_rgba(250,204,21,1)]",
-          "text-green-300 dark:text-emerald-400 blur-[2px] drop-shadow-[0_0_10px_rgba(134,239,172,0.8)] dark:drop-shadow-[0_0_15px_rgba(52,211,153,1)]",
-          "text-purple-300 dark:text-fuchsia-400 blur-[1.5px] drop-shadow-[0_0_10px_rgba(216,180,254,0.8)] dark:drop-shadow-[0_0_15px_rgba(232,121,249,1)]",
-          "text-rose-300 dark:text-rose-500 blur-[1px] md:blur-[2px] drop-shadow-[0_0_10px_rgba(253,164,175,0.8)] dark:drop-shadow-[0_0_15px_rgba(244,63,94,1)]",
-          "text-white dark:text-gray-100 blur-[1.5px] drop-shadow-[0_0_15px_rgba(255,255,255,1)] dark:drop-shadow-[0_0_20px_rgba(255,255,255,1)]"
-        ];
-        const colorClass = colorClasses[i % colorClasses.length];
-
+    <div className="absolute inset-0 z-[0] pointer-events-none overflow-hidden opacity-60 md:opacity-80">
+      {particleData.map((p) => {
+        const Icon = p.Icon;
         return (
           <motion.div 
-            key={i}
+            key={p.id}
             initial={{ y: '-10vh', x: 0, opacity: 0 }}
             animate={{ 
               y: ['-10vh', '110vh'],
-              x: [0, drift],
-              opacity: [0, 0.8, 0.8, 0]
+              x: [0, p.drift],
+              opacity: [0, 0.7, 0.7, 0]
             }}
             transition={{
-              y: { duration: duration, delay: delay, repeat: Infinity, ease: "linear" },
-              x: { duration: duration, delay: delay, repeat: Infinity, ease: "easeInOut" },
-              opacity: { duration: duration, delay: delay, repeat: Infinity, ease: "easeInOut" }
+              duration: p.duration,
+              delay: p.delay,
+              repeat: Infinity,
+              ease: "linear"
             }}
-            className={cn("absolute", colorClass)}
-            style={{ 
-              left: left + '%', 
-            }}
+            className={cn("absolute gpu-accelerated transition-colors duration-1000", p.colorClass)}
+            style={{ left: `${p.left}%` }}
           >
-            {/* Blinking Glow Wrapper */}
-            <motion.div
-              animate={{ 
-                opacity: [0.4, 1, 0.4], 
-                scale: [0.9, 1.1, 0.9] 
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: blinkDuration, 
-                ease: "easeInOut",
-                delay: Math.random() * 2
-              }}
-            >
-              <motion.div
-                animate={{ rotate: isSnow ? 360 : [-15, 15, -15] }}
-                transition={{ repeat: Infinity, duration: rotateDuration, ease: "linear" }}
-              >
-                <Icon size={size} fill={(isStar || isHeart) ? "currentColor" : "none"} strokeWidth={isSnow ? 2 : 1.5} />
-              </motion.div>
-            </motion.div>
-          </motion.div>
-        )
-      })}
-    </div>
-  );
-};
-
-const CakeParticles = () => {
-  const [isMobile, setIsMobile] = useState(false);
-  useEffect(() => {
-    const checkMobile = () => setIsMobile(window.innerWidth < 768);
-    checkMobile();
-    window.addEventListener('resize', checkMobile);
-    return () => window.removeEventListener('resize', checkMobile);
-  }, []);
-
-  const particlesCount = isMobile ? 5 : 12; // Reduced count
-  const icons = ['🎂', '🍰', '🧁', '🍪', '🍩', '🍬', '🍭', '🍫'];
-  
-  return (
-    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 md:opacity-50">
-      {Array.from({ length: particlesCount }).map((_, i) => {
-        const size = Math.random() * (isMobile ? 12 : 24) + 8; // Smaller size
-        const left = Math.random() * 100;
-        const delay = Math.random() * -15; // Start earlier
-        const duration = Math.random() * 8 + 15; // Smooth falling
-        const rotate = Math.random() * 360;
-        const drift = (Math.random() - 0.5) * 30; // Smoother drift
-        const blinkDuration = Math.random() * 3 + 2;
-        
-        return (
-          <motion.div
-            key={i}
-            initial={{ opacity: 0, y: '-10vh', x: 0 }}
-            animate={{
-              opacity: [0, 0.8, 0.8, 0],
-              y: ['-10vh', '110vh'],
-              x: [0, drift],
-            }}
-            transition={{
-               y: { duration, delay, repeat: Infinity, ease: "linear" },
-               x: { duration, delay, repeat: Infinity, ease: "easeInOut" },
-               opacity: { duration, delay, repeat: Infinity, ease: "easeInOut" }
-            }}
-            className="absolute drop-shadow-[0_0_10px_rgba(236,72,153,0.3)] blur-[0.5px]"
-            style={{ left: `${left}%`, fontSize: size }}
-          >
-            <motion.div
-              animate={{ 
-                scale: [0.9, 1.1, 0.9] 
-              }}
-              transition={{ 
-                repeat: Infinity, 
-                duration: blinkDuration, 
-                ease: "easeInOut",
-                delay: Math.random() * 2
-              }}
-            >
-              <motion.div
-                animate={{ rotate: rotate + 360 }}
-                transition={{ repeat: Infinity, duration: duration, ease: "linear" }}
-              >
-                {icons[i % icons.length]}
-              </motion.div>
-            </motion.div>
+            <Icon size={p.size} fill="currentColor" />
           </motion.div>
         );
       })}
     </div>
   );
-};
+});
 
-const Background = () => {
+const CakeParticles = React.memo(() => {
+  const [isMobile, setIsMobile] = useState(false);
+  useEffect(() => {
+    const checkMobile = () => setIsMobile(window.innerWidth < 768);
+    checkMobile();
+    window.addEventListener('resize', checkMobile);
+    return () => window.removeEventListener('resize', checkMobile);
+  }, []);
+
+  const icons = ['🎂', '🍰', '🧁', '🍪', '🍩', '🍫'];
+  const particleData = React.useMemo(() => {
+    const count = isMobile ? 4 : 8;
+    return Array.from({ length: count }).map((_, i) => ({
+      id: i,
+      size: (i % 2 === 0 ? 14 : 18) + (isMobile ? 0 : 4),
+      left: ((i * 23 + 11) % 90) + 5,
+      delay: -(i * 2),
+      duration: 16 + (i % 4) * 3,
+      drift: (i % 2 === 0 ? 20 : -20),
+      icon: icons[i % icons.length]
+    }));
+  }, [isMobile]);
+
   return (
-    <div className="fixed inset-0 w-full h-full z-[-1] pointer-events-none bg-ash dark:bg-matte transition-colors duration-700 overflow-hidden">
-      <div className="absolute inset-0 bg-gradient-to-tr from-pink-200/40 via-white/50 to-slate-200/40 dark:from-matte dark:via-matte dark:to-matte transition-colors duration-700"></div>
+    <div className="absolute inset-0 z-0 pointer-events-none overflow-hidden opacity-30 md:opacity-40">
+      {particleData.map((p) => (
+        <motion.div
+          key={p.id}
+          initial={{ opacity: 0, y: '-10vh', x: 0 }}
+          animate={{
+            opacity: [0, 0.6, 0.6, 0],
+            y: ['-10vh', '110vh'],
+            x: [0, p.drift],
+          }}
+          transition={{
+             duration: p.duration,
+             delay: p.delay,
+             repeat: Infinity,
+             ease: "linear"
+          }}
+          className="absolute gpu-accelerated"
+          style={{ left: `${p.left}%`, fontSize: p.size }}
+        >
+          {p.icon}
+        </motion.div>
+      ))}
+    </div>
+  );
+});
+
+const Background = React.memo(() => {
+  const { weatherData } = React.useContext(AppContext);
+  const condition = weatherData?.condition || 'sunny';
+  const theme = WEATHER_THEMES[condition];
+
+  return (
+    <div className="fixed inset-0 w-full h-full z-[-1] pointer-events-none bg-slate-50 dark:bg-[#050505] transition-colors duration-700 overflow-hidden">
+      {/* Weather Adaptive Ambient Soft Gradient Tint */}
+      <div className={cn(
+        "absolute inset-0 bg-gradient-to-tr transition-all duration-1000",
+        theme.bgGradient
+      )}></div>
       
-      {/* Animated Blobs for Glass Effect - Simplified on mobile */}
-      <motion.div 
-        animate={{
-          x: [0, 20, -20, 0],
-          y: [0, -30, 30, 0],
-          rotate: [0, 90, 0],
-          scale: [1, 1.05, 0.95, 1],
-        }}
-        transition={{ duration: 40, repeat: Infinity, ease: "easeInOut" }}
-        className="absolute top-[-10%] right-[-10%] w-[100vw] h-[100vw] md:w-[70vw] md:h-[70vw] bg-pink-300/10 dark:bg-pink-900/10 rounded-full blur-[80px] md:blur-[120px] mix-blend-multiply transition-all pointer-events-none"
-      />
-      <motion.div 
-        animate={{
-          x: [0, -20, 20, 0],
-          y: [0, 40, -40, 0],
-          rotate: [0, -90, 0],
-          scale: [1, 0.95, 1.05, 1],
-        }}
-        transition={{ duration: 45, repeat: Infinity, ease: "easeInOut", delay: 2 }}
-        className="absolute bottom-[-10%] left-[-10%] w-[100vw] h-[100vw] md:w-[70vw] md:h-[70vw] bg-slate-300/10 dark:bg-slate-900/20 rounded-full blur-[80px] md:blur-[120px] mix-blend-screen transition-all pointer-events-none"
-      />
+      {/* Light Ambient Glow Orbs - Weather Adaptive & GPU optimized */}
+      <div className={cn(
+        "absolute top-[-10%] right-[-10%] w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] rounded-full blur-[100px] pointer-events-none opacity-60 transition-all duration-1000",
+        theme.orb1
+      )} />
+      <div className={cn(
+        "absolute bottom-[-10%] left-[-10%] w-[60vw] h-[60vw] max-w-[600px] max-h-[600px] rounded-full blur-[100px] pointer-events-none opacity-60 transition-all duration-1000",
+        theme.orb2
+      )} />
       
       {/* Dynamic Grid Overlay (Subtle) */}
-      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.03] dark:opacity-[0.05] mix-blend-overlay"></div>
+      <div className="absolute inset-0 bg-[url('https://www.transparenttextures.com/patterns/cubes.png')] opacity-[0.02] dark:opacity-[0.03] mix-blend-overlay"></div>
       
       {/* Full Page Particles Layer */}
       <div className="absolute inset-0">
@@ -214,7 +170,7 @@ const Background = () => {
       </div>
     </div>
   );
-}
+});
 
 interface AppContextType {
   lang: Language;
@@ -226,6 +182,10 @@ interface AppContextType {
   loading: boolean;
   setOrderModalOpen: (open: boolean) => void;
   serverDate: { date: string, year: number } | null;
+  weatherData: WeatherData | null;
+  setWeatherCondition: (condition: WeatherCondition) => void;
+  setWeatherAuto: (isAuto: boolean) => void;
+  refreshWeather: () => Promise<void>;
 }
 
 export const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -425,6 +385,39 @@ export default function App() {
   const [serverDate, setServerDate] = useState<{ date: string, year: number } | null>(null);
   const [toast, setToast] = useState<{ message: string, visible: boolean }>({ message: '', visible: false });
   const [showScrollToTop, setShowScrollToTop] = useState(false);
+  const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
+
+  const refreshWeather = useCallback(async (isAuto = true, cond?: WeatherCondition) => {
+    const data = await fetchCurrentWeather(isAuto, cond);
+    setWeatherData(data);
+  }, []);
+
+  useEffect(() => {
+    refreshWeather(true);
+  }, [refreshWeather]);
+
+  const setWeatherCondition = useCallback((cond: WeatherCondition) => {
+    setWeatherData(prev => prev ? {
+      ...prev,
+      condition: cond,
+      isAuto: false,
+      labelEn: WEATHER_THEMES[cond].themeNameEn,
+      labelBn: WEATHER_THEMES[cond].themeNameBn,
+      icon: WEATHER_THEMES[cond].icon,
+    } : {
+      condition: cond,
+      temp: 28,
+      locationName: 'Custom Weather',
+      isAuto: false,
+      labelEn: WEATHER_THEMES[cond].themeNameEn,
+      labelBn: WEATHER_THEMES[cond].themeNameBn,
+      icon: WEATHER_THEMES[cond].icon,
+    });
+  }, []);
+
+  const setWeatherAuto = useCallback((isAuto: boolean) => {
+    refreshWeather(isAuto);
+  }, [refreshWeather]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -493,6 +486,9 @@ export default function App() {
     return () => window.removeEventListener('keydown', handleKeyDown);
   }, [lang, handleLanguageChange, toggleTheme]);
 
+  const galleryDataRef = useRef(galleryData);
+  galleryDataRef.current = galleryData;
+
   useEffect(() => {
     fetch('/api/server-date')
       .then(res => res.json())
@@ -510,12 +506,12 @@ export default function App() {
     fetchGallery();
     const interval = setInterval(() => {
       fetchGallery(true);
-    }, 5000); // Check for updates every 5s
+    }, 30000); // Check for updates every 30s
     return () => clearInterval(interval);
   }, []);
 
   const fetchGallery = async (silent = false) => {
-    if (!silent && (!galleryData.items || galleryData.items.length === 0)) setLoading(true);
+    if (!silent && (!galleryDataRef.current?.items || galleryDataRef.current.items.length === 0)) setLoading(true);
 
     let fetchedSuccessfully = false;
 
@@ -527,11 +523,14 @@ export default function App() {
         if (!isHtml) {
           const data = JSON.parse(text);
           if (data && typeof data === 'object' && Array.isArray(data.items) && data.items.length > 0) {
-            setGalleryData(data);
-            try {
-              localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
-            } catch (e) {
-              console.error('LocalStorage save error:', e);
+            const isDifferent = JSON.stringify(data) !== JSON.stringify(galleryDataRef.current);
+            if (isDifferent) {
+              setGalleryData(data);
+              try {
+                localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(data));
+              } catch (e) {
+                console.error('LocalStorage save error:', e);
+              }
             }
             fetchedSuccessfully = true;
           }
@@ -546,11 +545,14 @@ export default function App() {
       try {
         const directData = await fetchGalleryDataDirectFromSheets();
         if (directData && Array.isArray(directData.items) && directData.items.length > 0) {
-          setGalleryData(directData);
-          try {
-            localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(directData));
-          } catch (e) {
-            console.error('LocalStorage save error:', e);
+          const isDifferent = JSON.stringify(directData) !== JSON.stringify(galleryDataRef.current);
+          if (isDifferent) {
+            setGalleryData(directData);
+            try {
+              localStorage.setItem('bake_n_flake_gallery_cache', JSON.stringify(directData));
+            } catch (e) {
+              console.error('LocalStorage save error:', e);
+            }
           }
           fetchedSuccessfully = true;
         }
@@ -600,7 +602,8 @@ export default function App() {
   return (
     <AppContext.Provider value={{ 
       lang, setLang: handleLanguageChange, t, theme, toggleTheme, galleryData, loading,
-      setOrderModalOpen, serverDate
+      setOrderModalOpen, serverDate,
+      weatherData, setWeatherCondition, setWeatherAuto, refreshWeather
     }}>
       <Background />
       <div className={cn(
