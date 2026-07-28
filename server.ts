@@ -4,6 +4,7 @@ import { createServer as createViteServer } from 'vite';
 import { google } from 'googleapis';
 import dotenv from 'dotenv';
 import { PassThrough } from 'stream';
+import { FULL_GALLERY_BACKUP } from './src/constants/fullGalleryBackup.js';
 
 dotenv.config();
 
@@ -160,78 +161,7 @@ function optimizeImageUrl(url: string, thumbnail = false) {
   return optimized;
 }
 
-const FALLBACK_DATA: any = {
-  items: [
-    // Signature
-    { nameEn: "Chocolate Cakes", nameBn: "চকোলেট কেক", section: "Signature", img: "https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png" },
-    { nameEn: "Butterscotch Cakes", nameBn: "বাটারস্কচ কেক", section: "Signature", img: "https://i.ibb.co/fYcwMKdc/Butterscotch-Cakes-1.png" },
-    { nameEn: "Vanilla Cakes", nameBn: "ভ্যানিলা কেক", section: "Signature", img: "https://i.ibb.co/qMBQG6Nk/Vanilla-Cake-1.png" },
-    { nameEn: "Chocolate Truffle", nameBn: "চকোলেট ট্রাফল", section: "Signature", img: "https://i.ibb.co/MKF765x/Chocolate-Truffle-Cakes-1.png" },
-    { nameEn: "Pineapple Cakes", nameBn: "পাইনঅ্যাপল কেক", section: "Signature", img: "https://i.ibb.co/gbC67jD7/PIneapple-Cake-1.png" },
-    { nameEn: "Mango Cakes", nameBn: "ম্যাংগো কেক", section: "Signature", img: "https://i.ibb.co/q3M2pvxs/Mango-Cake-1.png" },
-    { nameEn: "Strawberry Cakes", nameBn: "স্ট্রবেরি কেক", section: "Signature", img: "https://i.ibb.co/7JYt6dJp/Strawberry-Cakes-1.jpg" },
-    { nameEn: "Red Velvet Cakes", nameBn: "রেড ভেলভেট কেক", section: "Signature", img: "https://i.ibb.co/s9gGgtpk/Red-velvet-1.png" },
-    { nameEn: "Fresh Fruit Cake", nameBn: "ফ্রেশ ফ্রুট Cake", section: "Signature", img: "https://i.ibb.co/F4V5yd16/Fresh-Fruit-Cake-1.png" },
-    { nameEn: "Forest Range", nameBn: "ফরেস্ট রেঞ্জ", section: "Signature", img: "https://i.ibb.co/q3P990gk/Black-Forest-1.png" },
-    { nameEn: "Oreo Cakes", nameBn: "ওরিও কেক", section: "Signature", img: "https://i.ibb.co/nprbQJC/Oreo-Cake-2.png" },
-    { nameEn: "Alcohol base Cake", nameBn: "অ্যালকোহল বেস Cake", section: "Signature", img: "https://i.ibb.co/xSj9RRdz/Alcohol-Cake-01.png" },
-    { nameEn: "Coffee Mocha", nameBn: "কফি মোকা", section: "Signature", img: "https://i.ibb.co/4w2jyMmB/Coffee-Cake-1.png" },
-    { nameEn: "Rasmalai Cake", nameBn: "রসমলাই Cake", section: "Signature", img: "https://i.ibb.co/4RBygSqR/Rasmalai-Cake-1.png" },
-    { nameEn: "Orange Cake", nameBn: "অরেঞ্জ কেক", section: "Signature", img: "https://i.ibb.co/RTSFv7dG/Orrange-Cake-1.png" },
-    { nameEn: "KitKat Cakes", nameBn: "কিটক্যাট কেক", section: "Signature", img: "https://i.ibb.co/k26bhF2H/Kitkat-1.png" },
-
-    // Gifting
-    { nameEn: "Birthday Cakes", nameBn: "জন্মদিনের কেক", section: "Gifting", img: "https://i.ibb.co/hJyMC4CY/Birthday-Cake-1.jpg" },
-    { nameEn: "Anniversary Cakes", nameBn: "অ্যানিভার্সারি কেক", section: "Gifting", img: "https://i.ibb.co/5gDy06k7/Aniversary-Cake-2.png" },
-    { nameEn: "Teacher's Day", nameBn: "টিচার্স ডে", section: "Gifting", img: "https://bakings.in/wp-content/uploads/2025/03/Charming-Blooms-Cake-510x509.jpg" },
-    { nameEn: "Customised Chocolates", nameBn: "কাস্টমাইজড চকোলেট", section: "Gifting", img: "https://i.ibb.co/Rp8C27Xt/Customized-Chocolates-2.jpg" },
-    { nameEn: "Father's Day Cake", nameBn: "ফাদার্স ডে কেক", section: "Gifting", img: "https://i.ibb.co/YT2LRm2x/Father-s-Day-Cake-1.png" },
-    { nameEn: "Mother's Day Cake", nameBn: "মাদার্স ডে কেক", section: "Gifting", img: "https://i.ibb.co/4n26zZCq/2.jpg" },
-    { nameEn: "Christmas Cake", nameBn: "ক্রিসমাস কেক", section: "Gifting", img: "https://i.ibb.co/7NKqnNsd/Christmas-Cake-4.png" },
-    { nameEn: "Baby Shower Cake", nameBn: "বেবি শাওয়ার কেক", section: "Gifting", img: "https://i.ibb.co/RTTYsqVd/KIDS-CAKE.png" },
-    { nameEn: "Rice Ceremony cakes", nameBn: "অন্নপ্রাশনের কেক", section: "Gifting", img: "https://i.pinimg.com/736x/6c/bb/7f/6cbb7f551f96722c5b6f01141b5b4aa6.jpg" },
-
-    // More
-    { nameEn: "Fresh Flower Cake", nameBn: "ফ্রেশ ফ্লাওয়ার কেক", section: "More", img: "https://i.ibb.co/fzVDfmhj/FRESH-FLOWER-CAKE-1.jpg", rounded: true },
-    { nameEn: "Doll Cakes", nameBn: "ডল কেক", section: "More", img: "https://i.ibb.co/bGXr5qW/DOLL-CAKE-1.png", rounded: true },
-    { nameEn: "Half Cakes", nameBn: "হাফ কেক", section: "More", img: "https://i.ibb.co/V0yhspQm/HALF-CAKE-1.jpg", rounded: true },
-    { nameEn: "Tier Cakes", nameBn: "টিয়ার কেক", section: "More", img: "https://i.ibb.co/Xx1SBWb6/TIRE-CAKE.png", rounded: true },
-    { nameEn: "Number Cakes", nameBn: "নম্বর কেক", section: "More", img: "https://i.ibb.co/20VxsJxG/Number-Cake.jpg", rounded: true },
-    { nameEn: "Kids Cakes", nameBn: "বাচ্চাদের কেক", section: "More", img: "https://i.ibb.co/xrgZZcx/Kids-Cake-1.png", rounded: true },
-    { nameEn: "Fondant and Semi Fondant Cakes", nameBn: "ফন্ডেন্ট ও সেমি ফন্ডেন্ট কেক", section: "More", img: "https://i.ibb.co/ZpB76tN5/FONDANT-1.png", rounded: true },
-    { nameEn: "Glitter Cake", nameBn: "গ্লিটার কেক", section: "More", img: "https://i.ibb.co/xt8VVwmW/Gliter-Cake-1.jpg", rounded: true },
-    { nameEn: "Customize Theme Cake", nameBn: "কাস্টমাইজড থিম কেক", section: "More", img: "https://i.ibb.co/9mnwZgX4/TIRE-CAKE1.png", rounded: true },
-    { nameEn: "Cheesecakes", nameBn: "চিজকেকস", section: "More", img: "https://i.pinimg.com/736x/bc/b6/0c/bcb60c22cedf8400a2e2c6b0679c22e5.jpg", rounded: true },
-    { nameEn: "Photo Cakes", nameBn: "ফটো কেক", section: "More", img: "https://i.ibb.co/rR23zjJp/Photo-Cake-1.png", rounded: true },
-    { nameEn: "Bento Cakes", nameBn: "বেন্টো কেক", section: "More", img: "https://i.ibb.co/3yDW6YkY/BENTO-1.jpg", rounded: true },
-    { nameEn: "Mousse", nameBn: "মাউস", section: "More", img: "https://i.ibb.co/xt88WGMM/Mousse-1.jpg", rounded: true },
-    { nameEn: "Jar and Glass Cakes", nameBn: "জার এবং গ্লাস কেক", section: "More", img: "https://i.ibb.co/9HDRRk0F/Jur-cake.png", rounded: true },
-    { nameEn: "Pinata Cakes", nameBn: "পিনাটা কেক", section: "More", img: "https://i.ibb.co/gbqnmvzd/02.jpg", rounded: true },
-    { nameEn: "Cupcakes and Muffins", nameBn: "কাপকেক ও মাফিন", section: "More", img: "https://i.ibb.co/jkNm1Zq8/Cupcakes-1.jpg", rounded: true },
-    { nameEn: "Pizza & Patties", nameBn: "পিজ্জা ও প্যাটিস", section: "More", img: "https://i.ibb.co/sTLSSsj/PIZZA-BUNS-1.png", rounded: true },
-    { nameEn: "Brownies", nameBn: "ব্রাউনিজ", section: "More", img: "https://i.ibb.co/F4rgH3Wn/Brownies-1.jpg", rounded: true }
-  ],
-  'Chocolate Cakes': [
-    'https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png',
-    'https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg',
-    'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
-  ],
-  'Butterscotch Cakes': [
-    'https://i.ibb.co/fYcwMKdc/Butterscotch-Cakes-1.png',
-    'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
-  ],
-  'Vanilla Cakes': [
-    'https://i.ibb.co/qMBQG6Nk/Vanilla-Cake-1.png'
-  ],
-  'YouTube Video': [
-    { vid: 'yt1', nameEn: "Cakes 🍰", nameBn: "কেকস 🍰", img: "https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" },
-    { vid: 'yt2', nameEn: "Pizza 🍕", nameBn: "পিজ্জা 🍕", img: "https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" }
-  ],
-  'Facebook Video': [
-    { vid: 'fb1', nameEn: "Cake Decoration", nameBn: "কেক ডেকোরেশন", img: "https://bakings.in/wp-content/uploads/2025/04/Rosy-Barbie-Doll-Cake-510x513.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" },
-    { vid: 'fb2', nameEn: "Special Custom Cake", nameBn: "স্পেশাল কাস্টম কেক", img: "https://bakings.in/wp-content/uploads/2025/04/Batman-Theme-Cake-399x400.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" }
-  ]
-};
+const FALLBACK_DATA: any = FULL_GALLERY_BACKUP;
 
 // Global state for gallery data
 let cachedGallery: any = JSON.parse(JSON.stringify(FALLBACK_DATA));

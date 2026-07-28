@@ -11,38 +11,12 @@ import OrderModal from './components/OrderModal';
 import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
 import { Language, Translation, GalleryData, VideoItem } from './types';
+import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
 import { flavours, gifts, moreOptionsData } from './constants/data';
 import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon } from 'lucide-react';
 
 const getInitialFallbackGalleryData = (): GalleryData => {
-  const items = [
-    ...flavours.map(f => ({ ...f, section: 'Signature' })),
-    ...gifts.map(g => ({ ...g, section: 'Gifting' })),
-    ...moreOptionsData.map(m => ({ ...m, section: 'More' }))
-  ];
-  return {
-    items,
-    'Chocolate Cakes': [
-      'https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png',
-      'https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg',
-      'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
-    ],
-    'Butterscotch Cakes': [
-      'https://i.ibb.co/fYcwMKdc/Butterscotch-Cakes-1.png',
-      'https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg'
-    ],
-    'Vanilla Cakes': [
-      'https://i.ibb.co/qMBQG6Nk/Vanilla-Cake-1.png'
-    ],
-    'YouTube Video': [
-      { vid: 'yt1', nameEn: "Cakes 🍰", nameBn: "কেকস 🍰", img: "https://bakings.in/wp-content/uploads/2024/08/Kitkat-Gems-Bomb-Shell-Cake.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" },
-      { vid: 'yt2', nameEn: "Pizza 🍕", nameBn: "পিজ্জা 🍕", img: "https://bakings.in/wp-content/uploads/2024/08/Delicious-Butterscotch-Combo.jpg", url: "https://www.youtube.com/@MuskanKhan-pk3qt" }
-    ],
-    'Facebook Video': [
-      { vid: 'fb1', nameEn: "Cake Decoration", nameBn: "কেক ডেকোরেশন", img: "https://bakings.in/wp-content/uploads/2025/04/Rosy-Barbie-Doll-Cake-510x513.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" },
-      { vid: 'fb2', nameEn: "Special Custom Cake", nameBn: "স্পেশাল কাস্টম কেক", img: "https://bakings.in/wp-content/uploads/2025/04/Batman-Theme-Cake-399x400.jpg", url: "https://www.facebook.com/flavoursbymusu/reels/" }
-    ]
-  };
+  return FULL_GALLERY_BACKUP as unknown as GalleryData;
 };
 import { motion, AnimatePresence } from 'motion/react';
 import { cn } from './lib/utils';
