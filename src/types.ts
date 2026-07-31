@@ -103,3 +103,49 @@ export interface Translation {
   contact: any;
   footer: any;
 }
+
+export interface CartItem {
+  id: string;
+  productNameEn: string;
+  productNameBn: string;
+  img: string;
+  weight: string;
+  price?: number;
+  quantity: number;
+  customNote?: string;
+  category?: string;
+}
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  phone: string;
+  email?: string;
+  address: string;
+  isLoggedIn: boolean;
+  role?: 'customer' | 'admin';
+}
+
+export type OrderStatus = 'Pending' | 'Confirmed' | 'Preparing' | 'Out for Delivery' | 'Delivered' | 'Cancelled';
+
+export interface Order {
+  id: string;
+  customerName: string;
+  customerPhone: string;
+  customerEmail?: string;
+  deliveryAddress: string;
+  deliveryDate: string;
+  items: CartItem[];
+  subtotal: number;
+  total: number;
+  status: OrderStatus;
+  timestamp: string;
+  notes?: string;
+  paymentMethod: 'Cash on Delivery' | 'UPI / Online';
+  userReview?: {
+    rating: number;
+    comment: string;
+    timestamp: string;
+  };
+  isThanksSent?: boolean;
+}

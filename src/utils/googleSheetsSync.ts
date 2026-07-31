@@ -100,18 +100,24 @@ async function fetchSheetRows(sheetName: string): Promise<string[][]> {
     const res = await fetch(url);
     if (!res.ok) return [];
     const text = await res.text();
+    if (!text || text.includes('Rate exceeded') || text.startsWith('Rate exceeded') || text.toLowerCase().includes('doctype html')) {
+      return [];
+    }
     const match = text.match(/google\.visualization\.Query\.setResponse\(([\s\S]*)\);/);
     if (!match || !match[1]) return [];
-    const json = JSON.parse(match[1]);
-    const table = json.table;
-    if (!table || !table.rows) return [];
+    try {
+      const json = JSON.parse(match[1]);
+      const table = json.table;
+      if (!table || !table.rows) return [];
 
-    return table.rows.map((row: any) => {
-      const cells = row.c ? row.c.map((cell: any) => cell ? (cell.v !== null ? (typeof cell.v === 'object' ? cell.f || '' : String(cell.v)) : '') : '') : [];
-      return cells.map((c: string) => c.trim());
-    });
+      return table.rows.map((row: any) => {
+        const cells = row.c ? row.c.map((cell: any) => cell ? (cell.v !== null ? (typeof cell.v === 'object' ? cell.f || '' : String(cell.v)) : '') : '') : [];
+        return cells.map((c: string) => c.trim());
+      });
+    } catch (e) {
+      return [];
+    }
   } catch (err) {
-    console.warn(`Failed fetching sheet "${sheetName}":`, err);
     return [];
   }
 }
@@ -244,7 +250,7 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
     }
 
     // 2. Fetch category sub-sheets in parallel batches
-    const BATCH_SIZE = 10;
+    const BATCH_SIZE = 5;
     for (let i = 0; i < CATEGORY_SHEET_NAMES.length; i += BATCH_SIZE) {
       const chunk = CATEGORY_SHEET_NAMES.slice(i, i + BATCH_SIZE);
       const categoryRowsList = await Promise.all(chunk.map(sheetName => fetchSheetRows(sheetName)));
@@ -268,6 +274,11 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
           }
         }
       });
+
+      // Small delay between batches to avoid gviz rate limiting
+      if (i + BATCH_SIZE < CATEGORY_SHEET_NAMES.length) {
+        await new Promise(r => setTimeout(r, 100));
+      }
     }
 
     return result;
@@ -275,4 +286,133 @@ export async function fetchGalleryDataDirectFromSheets(): Promise<GalleryData | 
     console.error('Error in fetchGalleryDataDirectFromSheets:', err);
     return null;
   }
+}
+
+export const BAKERY_WHATSAPP_NUMBER = '919875563329';
+export const TARGET_GOOGLE_SHEET_ID = '1vZsYmZzxu653U4T6O-_S0i2dazAU_VJKBRYwdgAmXSw';
+export const DEFAULT_GOOGLE_APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbwooZcsYkCYbzPORtVsU40Mmi8pxT2tFTItb9WKqns7Mk-0WFsx4k_t1kc3tQ7nDN_yjA/exec';
+
+export async function sendOrderToGoogleSheet(order: any, isUpdate: boolean = false): Promise<boolean> {
+  try {
+    // Build human-readable items string for Google Sheet cell
+    let itemsString = '';
+    if (Array.isArray(order.items)) {
+      itemsString = order.items.map((item: any, i: number) => {
+        const name = item.productNameEn || item.nameEn || item.title || 'Cake Item';
+        const weight = item.weight ? ` (${item.weight})` : '';
+        const qty = item.quantity ? ` x${item.quantity}` : '';
+        const note = item.customNote ? ` [Note: ${item.customNote}]` : '';
+        return `${i + 1}. ${name}${weight}${qty}${note}`;
+      }).join('\n');
+    } else if (typeof order.items === 'string') {
+      itemsString = order.items;
+    } else {
+      itemsString = JSON.stringify(order.items || '');
+    }
+
+    const payload = {
+      orderId: order.id || '#BNF-' + Math.floor(1000 + Math.random() * 9000),
+      timestamp: order.timestamp || new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }),
+      customerName: order.customerName || order.name || 'Valued Customer',
+      customerPhone: order.customerPhone || order.phone || '',
+      customerEmail: order.customerEmail || '',
+      items: itemsString,
+      subtotal: order.subtotal || order.total || 0,
+      total: order.total || order.price || 0,
+      deliveryAddress: order.deliveryAddress || order.address || 'Kolkata',
+      deliveryDate: order.deliveryDate || '',
+      status: order.status || 'Pending',
+      paymentMethod: order.paymentMethod || 'Cash on Delivery',
+      notes: order.notes || order.message || order.requirements || '',
+      sheetName: 'order info',
+      sheetGid: '1527393898',
+      isUpdate: isUpdate
+    };
+
+    // 1. Backend server proxy sync
+    fetch('/api/sync-sheet', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(err => console.warn('Backend proxy sync notice:', err));
+
+    // 2. Direct Apps Script webhook call
+    fetch(DEFAULT_GOOGLE_APPS_SCRIPT_URL, {
+      method: 'POST',
+      mode: 'no-cors',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload)
+    }).catch(err => console.warn('Direct Apps Script sync notice:', err));
+
+    return true;
+  } catch (e) {
+    console.error('Sheet sync error:', e);
+    return false;
+  }
+}
+
+export function generateWhatsAppOrderLink(order: any): string {
+  const itemsList = order.items.map((item: any, i: number) => 
+    `${i + 1}. *${item.productNameEn}* (${item.weight}) x${item.quantity}${item.customNote ? `\n   Note: "${item.customNote}"` : ''}`
+  ).join('\n');
+
+  const text = `🎂 *NEW ORDER - Bake n' Flake (~Flavours by Musu)* 🍰
+
+*Order ID:* ${order.id}
+*Customer:* ${order.customerName}
+*Phone:* ${order.customerPhone}
+*Delivery Address:* ${order.deliveryAddress}
+*Preferred Delivery Date:* ${order.deliveryDate}
+
+--------------------------
+*ORDERED ITEMS:*
+${itemsList}
+
+--------------------------
+*Payment Method:* ${order.paymentMethod}
+*Total Estimated:* ₹${order.total}
+
+Please confirm my order. Thank you!`;
+
+  return `https://wa.me/${BAKERY_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
+}
+
+export function generateWhatsAppConfirmationLink(order: any): string {
+  return generateWhatsAppStatusUpdateLink(order, order.status || 'Confirmed');
+}
+
+export function generateWhatsAppStatusUpdateLink(order: any, status: string): string {
+  const cleanPhone = (order.customerPhone || '').replace(/\D/g, '');
+  const formattedPhone = cleanPhone.length === 10 ? `91${cleanPhone}` : cleanPhone;
+
+  let statusText = '';
+  switch (status) {
+    case 'Pending':
+      statusText = `Hi *${order.customerName}*! 👋 We received your order *${order.id}* at *Bake n' Flake*. Status: *PENDING REVIEW* ⏳ We will confirm shortly!`;
+      break;
+    case 'Confirmed':
+      statusText = `Hi *${order.customerName}*! 👋 Your order *${order.id}* at *Bake n' Flake ~ Flavours by Musu* has been *CONFIRMED*! 🎂✨\n\n*Order Details:*\n- Delivery Date: ${order.deliveryDate}\n- Address: ${order.deliveryAddress}\n- Total Amount: ₹${order.total}\n\nThank you for choosing Bake n' Flake! ❤️`;
+      break;
+    case 'Preparing':
+      statusText = `Hi *${order.customerName}*! 👩‍🍳 Great news! We are now *PREPARING & BAKING* your cake for order *${order.id}*! Handcrafted with love and fresh ingredients! 🎂🧁✨`;
+      break;
+    case 'Out for Delivery':
+      statusText = `Hi *${order.customerName}*! 🚚 Exciting news! Your order *${order.id}* is *OUT FOR DELIVERY* right now! Get ready for your delicious treats! 🎉🎂`;
+      break;
+    case 'Delivered':
+      statusText = `Hi *${order.customerName}*! 🎉 Your order *${order.id}* has been successfully *DELIVERED*! We hope you love every single bite! ❤️✨\n\nPlease let us know your feedback in the app! ⭐️`;
+      break;
+    case 'Cancelled':
+      statusText = `Hi *${order.customerName}*, regarding order *${order.id}*, it has been *CANCELLED*. Please message us if you have any questions or would like to re-order.`;
+      break;
+    default:
+      statusText = `Hi *${order.customerName}*! Update for order *${order.id}*: Status is now *${status}*.`;
+  }
+
+  return `https://wa.me/${formattedPhone}?text=${encodeURIComponent(statusText)}`;
+}
+
+export function generateWhatsAppCustomerThanksLink(order: any): string {
+  const text = `Hi Musu! 👋 Thank you so much! I received my order *${order.id}* from *Bake n' Flake*! 🎂✨\n\nIt was super fresh and delicious! ❤️🍰`;
+  return `https://wa.me/${BAKERY_WHATSAPP_NUMBER}?text=${encodeURIComponent(text)}`;
 }

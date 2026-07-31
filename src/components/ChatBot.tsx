@@ -153,8 +153,26 @@ const AnimatedBotMessage = ({ msg, skipAnimation, onComplete }: { msg: Message, 
   );
 };
 
-export default function ChatBot({ floating = true }: { floating?: boolean }) {
-  const [isOpen, setIsOpen] = useState(false);
+export default function ChatBot({ 
+  floating = true,
+  isOpen: externalIsOpen,
+  onToggle,
+  onClose,
+  hideFloatingButton = false
+}: { 
+  floating?: boolean;
+  isOpen?: boolean;
+  onToggle?: (open: boolean) => void;
+  onClose?: () => void;
+  hideFloatingButton?: boolean;
+}) {
+  const [internalIsOpen, setInternalIsOpen] = useState(false);
+  const isOpen = externalIsOpen !== undefined ? externalIsOpen : internalIsOpen;
+  const setIsOpen = (open: boolean) => {
+    setInternalIsOpen(open);
+    onToggle?.(open);
+    if (!open) onClose?.();
+  };
   const [messages, setMessages] = useState<Message[]>([]);
   const [inputText, setInputText] = useState("");
   const [isTyping, setIsTyping] = useState(false);
@@ -524,9 +542,9 @@ export default function ChatBot({ floating = true }: { floating?: boolean }) {
         )}
       </AnimatePresence>
 
-      {/* Floating Button visible when chat is closed */}
+      {/* Floating Button visible when chat is closed and hideFloatingButton is false */}
       <AnimatePresence>
-        {!isOpen && (
+        {!isOpen && !hideFloatingButton && (
            <motion.div
              initial={{ scale: 0 }}
              animate={{ scale: 1 }}

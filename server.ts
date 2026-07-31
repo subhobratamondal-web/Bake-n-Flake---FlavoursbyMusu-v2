@@ -74,31 +74,166 @@ app.get(['/api/gallery', '/gallery'], async (req, res) => {
   }
 });
 
+// Helper for Google Sheets sync via direct API or Apps Script Webhook
+const recentProcessedOrders = new Map<string, number>();
+
+function isDuplicateOrder(orderId: string, status?: string, total?: any, isUpdate?: boolean): boolean {
+  if (!orderId || isUpdate) return false;
+  const key = `${orderId}_${status || 'Pending'}_${total || 0}`;
+  const now = Date.now();
+  for (const [k, time] of recentProcessedOrders.entries()) {
+    if (now - time > 3000) {
+      recentProcessedOrders.delete(k);
+    }
+  }
+  if (recentProcessedOrders.has(key)) {
+    return true;
+  }
+  recentProcessedOrders.set(key, now);
+  return false;
+}
+
+async function appendToGoogleSheetDirectly(payload: any) {
+  const spreadsheetId = SPREADSHEET_ID;
+  const scriptUrl = 'https://script.google.com/macros/s/AKfycbx4b-WMJic6rFfgYkn8UZxfWcvWvzco2chSN72tqjiePMlD_zCJkMVOhjTD-t0yKJUIbA/exec';
+
+  const orderId = payload.orderId || payload.id || "#BNF-" + Math.floor(1000 + Math.random() * 9000);
+  const rowValues = [
+    payload.timestamp || new Date().toLocaleString("en-IN", { timeZone: "Asia/Kolkata" }),
+    orderId,
+    payload.customerName || payload.name || "Valued Customer",
+    payload.customerPhone || payload.phone || "",
+    payload.customerEmail || payload.email || "",
+    typeof payload.items === 'string' ? payload.items : JSON.stringify(payload.items || ''),
+    payload.subtotal || payload.total || 0,
+    payload.total || payload.price || 0,
+    payload.deliveryDate || "",
+    payload.deliveryAddress || payload.address || "Kolkata",
+    payload.status || "Pending",
+    payload.paymentMethod || "Cash on Delivery",
+    payload.notes || payload.message || payload.requirements || ""
+  ];
+
+  let directApiSuccess = false;
+
+  // Attempt 1: Try Direct Google Sheets API if enabled
+  try {
+    const auth = new google.auth.GoogleAuth({
+      scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+    });
+    const sheetsClient = google.sheets({ version: 'v4', auth });
+    
+    // Inspect spreadsheet metadata to find the exact sheet title for gid=1527393898 or title 'order info'
+    let targetSheetTitle = 'order info';
+    try {
+      const meta = await sheetsClient.spreadsheets.get({ spreadsheetId });
+      const sheetList = meta.data.sheets || [];
+      const matched = sheetList.find((s: any) => 
+        String(s.properties?.sheetId) === '1527393898' ||
+        String(s.properties?.title || '').toLowerCase().includes('order info') ||
+        String(s.properties?.title || '').toLowerCase() === 'order info'
+      );
+      if (matched && matched.properties?.title) {
+        targetSheetTitle = matched.properties.title;
+      }
+    } catch (metaErr: any) {
+      console.warn('[Google Sheets API] Metadata lookup notice:', metaErr.message);
+    }
+
+    // Lookup existing order ID row in column B to update if present
+    let existingRowIndex = -1;
+    try {
+      const readRes = await sheetsClient.spreadsheets.values.get({
+        spreadsheetId,
+        range: `'${targetSheetTitle}'!B:B`
+      });
+      const rows = readRes.data.values || [];
+      for (let i = 0; i < rows.length; i++) {
+        if (rows[i] && String(rows[i][0]).trim() === String(orderId).trim()) {
+          existingRowIndex = i + 1; // 1-indexed for Google Sheets
+          break;
+        }
+      }
+    } catch (readErr: any) {
+      console.warn('[Google Sheets API] Row search notice:', readErr.message);
+    }
+
+    if (existingRowIndex > 0) {
+      // UPDATE existing row
+      const updateRange = `'${targetSheetTitle}'!A${existingRowIndex}:M${existingRowIndex}`;
+      await sheetsClient.spreadsheets.values.update({
+        spreadsheetId,
+        range: updateRange,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [rowValues] }
+      });
+      console.log(`[Google Sheets API] Updated existing row ${existingRowIndex} for order ${orderId}`);
+    } else {
+      // APPEND new row
+      const appendRange = `'${targetSheetTitle}'!A:M`;
+      await sheetsClient.spreadsheets.values.append({
+        spreadsheetId,
+        range: appendRange,
+        valueInputOption: 'USER_ENTERED',
+        requestBody: { values: [rowValues] },
+      });
+      console.log(`[Google Sheets API] Successfully appended new order row ${orderId} to ${appendRange}`);
+    }
+    directApiSuccess = true;
+  } catch (err: any) {
+    console.info('[Google Sheets Sync] Direct Sheets API notice:', err?.message || err);
+  }
+
+  // Webhook Sync to Google Apps Script
+  try {
+    const response = await fetch(scriptUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        ...payload,
+        orderId,
+        sheetName: 'order info',
+        sheetGid: '1527393898'
+      }),
+      redirect: 'follow',
+    });
+    const responseText = await response.text();
+    console.log('[Google Sheets Webhook] Apps Script sync completed:', responseText.slice(0, 100));
+  } catch (webhookErr: any) {
+    console.warn('[Google Sheets Webhook] Sync notice:', webhookErr?.message || webhookErr);
+  }
+
+  return true;
+}
+
+app.post(['/api/sync-sheet', '/sync-sheet'], async (req, res) => {
+  const payload = req.body || {};
+  const orderId = payload.orderId || payload.id;
+
+  if (orderId && isDuplicateOrder(orderId, payload.status, payload.total, payload.isUpdate)) {
+    console.log(`[API/sync-sheet] Ignored duplicate order request for ID: ${orderId}`);
+    return res.json({ status: 'success', message: 'Order creation already synced (duplicate ignored)' });
+  }
+
+  console.log('[API/sync-sheet] Processing order for Google Sheet sync:', orderId || payload.customerName);
+
+  await appendToGoogleSheetDirectly(payload);
+
+  return res.json({ 
+    status: 'success', 
+    message: 'Order processed and synced to Google Sheets'
+  });
+});
+
 app.post(['/api/order', '/order'], async (req, res) => {
   try {
-    const { name, deliveryDate, flavor, weight, message, requirements } = req.body;
-    
-    // Use Server-side API key for appending orders if available
-    const auth = process.env.GOOGLE_API_KEY || process.env.GEMINI_API_KEY;
-    const sheets = google.sheets({ version: 'v4', auth: auth as any });
-    
+    const payload = req.body || {};
+    const orderId = payload.orderId || payload.id;
+    if (orderId && isDuplicateOrder(orderId, payload.status, payload.total)) {
+      return res.json({ status: 'success', message: 'Order already processed (duplicate ignored)' });
+    }
     try {
-      await sheets.spreadsheets.values.append({
-        spreadsheetId: SPREADSHEET_ID,
-        range: 'Orders!A:G',
-        valueInputOption: 'USER_ENTERED',
-        requestBody: {
-          values: [[
-            new Date().toLocaleString(), 
-            name, 
-            deliveryDate, 
-            flavor, 
-            weight, 
-            message, 
-            requirements
-          ]],
-        },
-      });
+      await appendToGoogleSheetDirectly(payload);
     } catch (sheetErr: any) {
       console.warn('Sheet append skipped:', sheetErr.message);
     }
@@ -194,20 +329,19 @@ let sheetCache: Record<string, { data: any, timestamp: number }> = {};
 let isSyncing = false;
 let lastSyncTime = 0;
 
-async function fetchWithRetry(url: string, signal: AbortSignal, maxRetries = 5): Promise<Response> {
+async function fetchWithRetry(url: string, signal: AbortSignal, maxRetries = 2): Promise<Response> {
   let lastError: any;
   for (let i = 0; i < maxRetries; i++) {
     try {
       const response = await fetch(url, { signal });
       if (response.status === 429) {
-        const delay = Math.pow(2, i * 2) * 5000 + Math.random() * 2000;
-        console.warn(`[RATE LIMIT] 429 for ${url}. Retrying...`);
+        const delay = (i + 1) * 1500 + Math.random() * 500;
+        console.warn(`[RATE LIMIT] 429 for ${url}. Waiting briefly...`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
       }
       if (response.status >= 500 && response.status < 600) {
-        const delay = Math.pow(2, i) * 3000 + Math.random() * 1000;
-        console.warn(`[SERVER ERROR] ${response.status} for ${url}. Retrying...`);
+        const delay = (i + 1) * 1000;
         lastError = new Error(`HTTP ${response.status}`);
         await new Promise(resolve => setTimeout(resolve, delay));
         continue;
@@ -216,7 +350,7 @@ async function fetchWithRetry(url: string, signal: AbortSignal, maxRetries = 5):
     } catch (error: any) {
       lastError = error;
       if (error.name === 'AbortError') throw error;
-      const delay = Math.pow(2, i) * 3000 + Math.random() * 1000;
+      const delay = (i + 1) * 1000;
       await new Promise(resolve => setTimeout(resolve, delay));
     }
   }

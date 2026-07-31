@@ -3,6 +3,7 @@ import { motion, AnimatePresence, useInView } from 'motion/react';
 import { useSwipeable } from 'react-swipeable';
 import { TransformWrapper, TransformComponent } from 'react-zoom-pan-pinch';
 import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
+import { playSound } from '../lib/sounds';
 import { OptimizedImage } from './OptimizedImage';
 import { GalleryItemSkeleton } from './common/Skeleton';
 
@@ -54,7 +55,7 @@ const useImagePreloader = (items: any[], currentIndex: number | null, itemsToSho
 };
 import { AppContext } from '../App';
 import { flavours, gifts, moreOptionsData } from '../constants/data';
-import { ChevronLeft, ChevronRight, Cake, Heart, Sparkles, Gift, MoreHorizontal, Instagram } from 'lucide-react';
+import { ChevronLeft, ChevronRight, Cake, Heart, Sparkles, Gift, MoreHorizontal, Instagram, ZoomIn, ShoppingCart, X } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 // Components and Icons
@@ -85,7 +86,7 @@ const contactInfo = [
 ];
 
 export default function GallerySection() {
-  const { galleryData, lang, theme } = useContext(AppContext);
+  const { galleryData, lang, theme, openQuickAddToCart, toggleWishlist, isWishlisted } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState<'Signature Menu' | 'Thoughtful Gifting' | 'Something More' | 'Social Feeds'>('Signature Menu');
   const [index, setIndex] = useState(0);
   const [isMobile, setIsMobile] = useState(false);
@@ -626,6 +627,12 @@ export default function GallerySection() {
 
                   {/* Image Section */}
                   <div className="w-full md:w-3/5 aspect-[4/5] relative overflow-hidden group/img bg-slate-100 dark:bg-black/30 flex items-center justify-center shrink-0">
+                    {/* Magnify / Zoom Hint Badge */}
+                    <div className="absolute top-4 left-4 z-20 flex items-center gap-1.5 px-3 py-1.5 rounded-full bg-black/60 backdrop-blur-md border border-white/20 text-white font-bold text-[10px] uppercase tracking-wider shadow-lg pointer-events-none">
+                      <ZoomIn size={14} className="text-pink-400 animate-pulse" />
+                      <span>{lang === 'en' ? 'Pinch / Scroll to Magnify' : 'পিন্চ / স্ক্রোল করে জুম করুন'}</span>
+                    </div>
+
                     <TransformWrapper
                       initialScale={1}
                       minScale={1}
@@ -646,7 +653,7 @@ export default function GallerySection() {
                           }}
                           src={getOptimizedImageUrl(items[lightboxIndex].img, 1000, 85) || items[lightboxIndex]?.img || "https://i.ibb.co/XkYN11bL/PROFILE.jpg"}
                           alt={items[lightboxIndex].nameEn}
-                          className="w-full h-full object-cover"
+                          className="w-full h-full object-cover cursor-zoom-in"
                           referrerPolicy="no-referrer"
                           loading="lazy"
                           decoding="async"
@@ -679,7 +686,7 @@ export default function GallerySection() {
                   </div>
 
                   {/* Details Section */}
-                  <div className="w-full md:w-2/5 p-6 md:p-12 flex flex-col justify-between bg-white/70 dark:bg-slate-900/60 md:bg-transparent dark:md:bg-transparent overflow-y-auto max-h-[50vh] md:max-h-none hide-scrollbar">
+                  <div className="w-full md:w-2/5 p-6 md:p-8 flex flex-col justify-between bg-white/70 dark:bg-slate-900/60 md:bg-transparent dark:md:bg-transparent overflow-y-auto max-h-[50vh] md:max-h-none hide-scrollbar gap-4">
                     <div>
                       <motion.div
                         initial={{ opacity: 0, x: 20 }}
@@ -689,18 +696,66 @@ export default function GallerySection() {
                         <p className="text-pink-500 font-bold tracking-[0.3em] uppercase text-[9px] md:text-[10px] mb-2 md:mb-3">
                            {items[lightboxIndex].category}
                         </p>
-                        <h2 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white leading-[1.1] mb-4 md:mb-6 tracking-tighter uppercase italic">
+                        <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white leading-[1.2] mb-3 md:mb-4 tracking-tight uppercase italic pr-8">
                            {lang === 'en' ? items[lightboxIndex].nameEn : items[lightboxIndex].nameBn}
                         </h2>
                         
-                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-6">
-                           <div className="text-slate-600 dark:text-slate-300 text-[10px] md:text-sm leading-relaxed font-medium whitespace-pre-wrap max-h-[20vh] md:max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
+                        <div className="space-y-3 md:space-y-4 mb-4 md:mb-5">
+                           <div className="text-slate-600 dark:text-slate-300 text-[10px] md:text-xs leading-relaxed font-medium whitespace-pre-wrap max-h-[20vh] md:max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
                               {lang === 'en' 
                                 ? (items[lightboxIndex] as any).descEn || `✨ The Magic of Classic ${items[lightboxIndex].nameEn}! 🎂\nMake your special days even sweeter with Bake n' Flake's super soft, fluffy, and premium ${items[lightboxIndex].nameEn}! 🤍`
                                 : (items[lightboxIndex] as any).descBn || `✨ ক্লাসিক ${items[lightboxIndex].nameBn || items[lightboxIndex].nameEn} এর স্নিগ্ধ জাদুকরী স্বাদ! 🎂\nআপনার স্পেশাল দিনগুলোকে আরও মিষ্টি করে তুলতে Bake n' Flake নিয়ে এসেছে একদম নরম, তুলতুলে এবং প্রিমিয়াম ${items[lightboxIndex].nameBn || items[lightboxIndex].nameEn}! 🤍`}
                            </div>
                            
-                           <div className="w-10 md:w-12 h-1 md:h-1.5 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.6)] mt-4" />
+                           <div className="w-10 md:w-12 h-1 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.6)] mt-3" />
+                        </div>
+
+                        {/* Add to Cart & Wishlist Actions inside Lightbox */}
+                        <div className="flex items-center gap-2.5 my-4">
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentGalleryItem = items[lightboxIndex];
+                              if (currentGalleryItem && openQuickAddToCart) {
+                                setLightboxIndex(null);
+                                openQuickAddToCart({
+                                  nameEn: currentGalleryItem.nameEn || currentGalleryItem.name || 'Special Cake',
+                                  nameBn: currentGalleryItem.nameBn || currentGalleryItem.nameEn || 'বিশেষ কেক',
+                                  category: currentGalleryItem.category || 'Cake',
+                                  img: currentGalleryItem.img
+                                });
+                              }
+                            }}
+                            className="flex-1 py-3 px-4 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white rounded-2xl font-black uppercase tracking-wider text-xs flex items-center justify-center gap-2 shadow-lg shadow-pink-500/20 hover:scale-[1.02] active:scale-95 transition-all"
+                          >
+                            <ShoppingCart size={16} />
+                            {lang === 'en' ? 'Add to Cart' : 'কার্টে যোগ করুন'}
+                          </button>
+
+                          <button
+                            type="button"
+                            onClick={() => {
+                              const currentGalleryItem = items[lightboxIndex];
+                              if (currentGalleryItem && toggleWishlist) {
+                                playSound('ding');
+                                toggleWishlist({
+                                  nameEn: currentGalleryItem.nameEn || currentGalleryItem.name || 'Special Cake',
+                                  nameBn: currentGalleryItem.nameBn || currentGalleryItem.nameEn || 'বিশেষ কেক',
+                                  img: currentGalleryItem.img || '',
+                                  category: currentGalleryItem.category || 'Cake'
+                                });
+                              }
+                            }}
+                            className={cn(
+                              "p-3 rounded-2xl border transition-all flex items-center justify-center shadow-md active:scale-95",
+                              isWishlisted?.(items[lightboxIndex]?.nameEn)
+                                ? "bg-rose-500 text-white border-rose-400 shadow-rose-500/30"
+                                : "bg-white/80 dark:bg-slate-800 text-slate-700 dark:text-white border-slate-200 dark:border-white/10 hover:border-pink-500"
+                            )}
+                            title={isWishlisted?.(items[lightboxIndex]?.nameEn) ? "Remove from Wishlist" : "Add to Wishlist"}
+                          >
+                            <Heart size={18} className={isWishlisted?.(items[lightboxIndex]?.nameEn) ? "fill-white" : ""} />
+                          </button>
                         </div>
                       </motion.div>
                     </div>

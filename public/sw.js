@@ -103,12 +103,30 @@ self.addEventListener('fetch', (event) => {
     return;
   }
 
-  // 3. Static Assets - Cache First, Fallback to Network
+  // 3. HTML / Navigation / Core JS Assets - Network First with Cache Fallback
+  if (event.request.mode === 'navigate' || url.pathname.endsWith('.js') || url.pathname.endsWith('.css') || url.pathname === '/') {
+    event.respondWith(
+      fetch(event.request)
+        .then((networkResponse) => {
+          if (networkResponse && networkResponse.ok) {
+            const copy = networkResponse.clone();
+            caches.open(CACHE_NAME).then((cache) => cache.put(event.request, copy));
+          }
+          return networkResponse;
+        })
+        .catch(() => {
+          return caches.match(event.request).then((cached) => cached || caches.match('/'));
+        })
+    );
+    return;
+  }
+
+  // 4. Other Static Assets - Cache First, Fallback to Network
   event.respondWith(
     caches.match(event.request).then((cachedResponse) => {
       if (cachedResponse) return cachedResponse;
       return fetch(event.request).then((networkResponse) => {
-        if (networkResponse.ok && event.request.url.startsWith('http')) {
+        if (networkResponse && networkResponse.ok && event.request.url.startsWith('http')) {
           caches.open(CACHE_NAME).then((cache) => cache.put(event.request, networkResponse.clone()));
         }
         return networkResponse;

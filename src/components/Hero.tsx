@@ -1,16 +1,23 @@
 import React, { useContext, useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence, useScroll, useTransform } from 'motion/react';
-import { Sparkles, ShoppingBag, Star, Clock, Heart, ChevronLeft, ChevronRight, Palette } from 'lucide-react';
+import { Sparkles, ShoppingBag, Star, Clock, Heart, ChevronLeft, ChevronRight, Palette, ShieldCheck } from 'lucide-react';
 import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 import { FULL_GALLERY_BACKUP } from '../constants/fullGalleryBackup';
 import { OptimizedImage } from './OptimizedImage';
+import CelebrationsBanner from './CelebrationsBanner';
+import { CelebrationEvent } from './CelebrationsModal';
 
 import { playSound } from '../lib/sounds';
 
-export default function Hero() {
-  const { t, galleryData } = useContext(AppContext);
+interface HeroProps {
+  onOpenCelebrationsModal?: () => void;
+  onOrderForCelebration?: (item: CelebrationEvent) => void;
+}
+
+export default function Hero({ onOpenCelebrationsModal, onOrderForCelebration }: HeroProps) {
+  const { t, galleryData, lang } = useContext(AppContext);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [featureIndex, setFeatureIndex] = useState(0);
   const carouselRef = useRef<HTMLDivElement>(null);
@@ -22,6 +29,7 @@ export default function Hero() {
     { title: "Made with Love", sub: "Since 2019", icon: Heart, color: "text-pink-500", bg: "bg-white shadow-md" },
     { title: "Custom Designs", sub: "Personalized cakes for your special moments", icon: Palette, color: "text-purple-500", bg: "bg-white shadow-md" },
     { title: "100% Quality", sub: "Premium Ingredients", icon: Star, color: "text-yellow-500", bg: "bg-white shadow-md" },
+    { title: "Fssai Certified", sub: "Food Safety Certified", isFssai: true, bg: "bg-white shadow-md" },
     { title: "Musu", sub: "Bakery Owner", isAvatar: true, image: "https://i.ibb.co/wrc3VVRg/PROFILE.jpg", link: "https://www.facebook.com/musu.khan99/" }
   ];
 
@@ -261,42 +269,57 @@ export default function Hero() {
               <motion.div 
                 animate={{ x: isMobile ? `-${featureIndex * 100}%` : '0%' }}
                 transition={{ type: "spring", stiffness: 300, damping: 30 }}
-                className="flex md:grid md:grid-cols-4 w-full"
+                className="flex md:grid md:grid-cols-5 w-full"
               >
                 {features.map((feature, i) => (
                   <div 
                     key={i} 
-                    className="flex-shrink-0 w-full md:w-auto px-4 border-r last:border-r-0 border-slate-200 dark:border-white/10 flex justify-center items-center"
+                    className="flex-shrink-0 w-full md:w-auto px-3 border-r last:border-r-0 border-slate-200 dark:border-white/10 flex justify-center items-center"
                   >
                     <a
                       href={(feature as any).link}
                       target={(feature as any).link ? "_blank" : undefined}
                       rel={(feature as any).link ? "noreferrer" : undefined}
                       className={cn(
-                        "flex items-center justify-center md:justify-start gap-4 lg:gap-6 group text-left w-full max-w-[280px]",
+                        "flex items-center justify-center md:justify-start gap-3 lg:gap-4 group text-left w-full max-w-[280px]",
                         (feature as any).link ? "cursor-pointer" : "cursor-default"
                       )}
                     >
                       <div className={cn(
-                        "w-14 h-14 md:w-16 md:h-16 rounded-full flex items-center justify-center shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-500",
+                        "w-12 h-12 md:w-14 md:h-14 rounded-full flex items-center justify-center shadow-inner shrink-0 group-hover:scale-110 transition-transform duration-500",
                         feature.bg || "bg-slate-100"
                       )}>
-                        {feature.isAvatar ? (
+                        {(feature as any).isFssai ? (
+                          <div className="w-full h-full p-1 flex items-center justify-center">
+                            <svg className="w-full h-full" viewBox="0 0 120 70" fill="none" xmlns="http://www.w3.org/2000/svg">
+                              {/* Top Bar */}
+                              <rect x="12" y="14" width="96" height="3.5" rx="1.75" fill="#15803D" />
+                              {/* Bottom Bar */}
+                              <rect x="12" y="52" width="96" height="3.5" rx="1.75" fill="#15803D" />
+                              {/* fssai Text */}
+                              <text x="54" y="44" textAnchor="middle" fontFamily="Georgia, serif" fontWeight="900" fontStyle="italic" fontSize="28" fill="#15803D" letterSpacing="-0.5">
+                                fssai
+                              </text>
+                              {/* Leaf Dot above 'i' */}
+                              <path d="M78 22 C82 17, 88 18, 89 22 C85 26, 79 25, 78 22 Z" fill="#16A34A" />
+                            </svg>
+                          </div>
+                        ) : feature.isAvatar ? (
                           <div className="w-full h-full rounded-full overflow-hidden border-2 border-pink-500/30">
                             <img src={feature.image || "https://i.ibb.co/wrc3VVRg/PROFILE.jpg"} alt={feature.title} className="w-full h-full object-cover" referrerPolicy="no-referrer" />
                           </div>
                         ) : (
-                          <feature.icon className={feature.color} size={28} />
+                          <feature.icon className={feature.color} size={24} />
                         )}
                       </div>
                       <div className="flex flex-col">
                         <h4 className={cn(
-                          "text-base md:text-lg font-black uppercase tracking-tight transition-colors",
-                          (feature as any).link || feature.isAvatar ? "text-pink-600" : "text-slate-800 dark:text-gray-100 group-hover:text-pink-600"
+                          "text-sm md:text-base font-black uppercase tracking-tight transition-colors leading-tight",
+                          (feature as any).link || feature.isAvatar ? "text-pink-600" : (feature as any).isFssai ? "text-emerald-600 dark:text-emerald-400" : "text-slate-800 dark:text-gray-100 group-hover:text-pink-600"
                         )}>
                           {feature.isAvatar ? `~ ${feature.title}` : feature.title}
                         </h4>
-                        <p className="text-[10px] md:text-xs text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider line-clamp-1">
+                        <p className="text-[9px] md:text-[10px] text-slate-500 dark:text-slate-400 font-bold uppercase tracking-wider line-clamp-1 mt-0.5">
                           {feature.sub}
                         </p>
                       </div>
@@ -314,6 +337,15 @@ export default function Hero() {
             </button>
         </div>
       </div>
+
+      {/* Celebrations Banner directly under Hero features */}
+      {onOpenCelebrationsModal && onOrderForCelebration && (
+        <CelebrationsBanner
+          lang={lang}
+          onOpenModal={onOpenCelebrationsModal}
+          onOrderForCelebration={onOrderForCelebration}
+        />
+      )}
     </section>
   );
 }

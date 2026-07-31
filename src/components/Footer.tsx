@@ -5,7 +5,7 @@ import { AppContext } from '../App';
 import { cn } from '../lib/utils';
 
 export default function Footer() {
-  const { t, galleryData, serverDate, lastSyncedTime, syncStatus, handleForceRefresh } = useContext(AppContext);
+  const { t, galleryData, serverDate, lastSyncedTime, syncStatus, handleForceRefresh, setIsWishlistOpen, wishlist, lang } = useContext(AppContext);
   const [isLinksVisible, setIsLinksVisible] = useState(false);
   const headerLogoItem = galleryData['Header']?.[1];
   const logoUrl = (headerLogoItem 
@@ -72,6 +72,13 @@ export default function Footer() {
                     {t.nav[item]}
                   </button>
                 ))}
+                <button
+                  onClick={() => setIsWishlistOpen(true)}
+                  className="py-3 px-6 bg-pink-50 dark:bg-pink-950/40 rounded-2xl text-xs font-bold text-pink-600 dark:text-pink-300 uppercase tracking-widest hover:bg-pink-500 hover:text-white transition-all border border-pink-200 dark:border-pink-800/40 flex items-center justify-center gap-2"
+                >
+                  <Heart size={14} className="fill-pink-500 text-pink-500 group-hover:fill-white" />
+                  {lang === 'en' ? 'My Wishlist' : 'আমার উইশলিস্ট'} ({wishlist.length})
+                </button>
              </div>
           </motion.div>
 

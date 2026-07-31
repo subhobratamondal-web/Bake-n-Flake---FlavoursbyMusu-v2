@@ -1,10 +1,51 @@
 import React, { useState, useEffect, useRef, useContext } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { X, Send, Camera, Calendar, Pizza, Scale, MessageSquare, Phone, MessageCircle, ChevronDown, Copy, Check } from 'lucide-react';
+import confetti from 'canvas-confetti';
 import { flavours } from '../constants/data';
 import { cn } from '../lib/utils';
 import { AppContext } from '../App';
 import { playSound } from '../lib/sounds';
+
+import { sendOrderToGoogleSheet } from '../utils/googleSheetsSync';
+
+const triggerCelebratoryConfetti = () => {
+  const count = 180;
+  const defaults = { origin: { y: 0.65 } };
+
+  function fire(particleRatio: number, opts: confetti.Options) {
+    confetti({
+      ...defaults,
+      ...opts,
+      particleCount: Math.floor(count * particleRatio)
+    });
+  }
+
+  fire(0.25, {
+    spread: 26,
+    startVelocity: 55,
+    colors: ['#ec4899', '#f43f5e', '#fbbf24', '#10b981']
+  });
+  fire(0.2, {
+    spread: 60,
+    colors: ['#3b82f6', '#8b5cf6', '#ec4899']
+  });
+  fire(0.35, {
+    spread: 100,
+    decay: 0.91,
+    scalar: 0.8
+  });
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 25,
+    decay: 0.92,
+    scalar: 1.2
+  });
+  fire(0.1, {
+    spread: 120,
+    startVelocity: 45,
+  });
+};
 
 interface OrderModalProps {
   isOpen: boolean;
@@ -13,7 +54,7 @@ interface OrderModalProps {
 }
 
 export default function OrderModal({ isOpen, onClose, lang }: OrderModalProps) {
-  const { t } = useContext(AppContext);
+  const { t, addOrder, user } = useContext(AppContext);
   const [isSyncing, setIsSyncing] = useState(false);
   
   const initialForm = {
@@ -65,15 +106,33 @@ export default function OrderModal({ isOpen, onClose, lang }: OrderModalProps) {
     setIsSyncing(true);
     
     try {
-      const response = await fetch('/api/order', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(form)
+      const createdOrder = addOrder({
+        customerName: form.name.trim(),
+        customerPhone: user?.phone || 'WhatsApp Inquiry',
+        customerEmail: user?.email || '',
+        deliveryAddress: 'WhatsApp Custom Order Discussion',
+        deliveryDate: form.deliveryDate,
+        items: [
+          {
+            id: 'custom_' + Date.now(),
+            productNameEn: form.flavor ? `Custom Cake (${form.flavor})` : 'Custom Cake Order',
+            productNameBn: form.flavor ? `কাস্টম কেক (${form.flavor})` : 'কাস্টম কেক অর্ডার',
+            img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=800',
+            weight: form.weight || 'Standard',
+            price: 500,
+            quantity: 1,
+            customNote: `Message: ${form.message || 'N/A'}. Requirements: ${form.requirements || 'N/A'}`,
+            category: 'Custom'
+          }
+        ],
+        subtotal: 500,
+        total: 500,
+        notes: `Cake Message: ${form.message}. Req: ${form.requirements}`,
+        paymentMethod: 'Cash on Delivery'
       });
-      
-      if (!response.ok) {
-        console.error('Order sync failed:', response.statusText);
-      }
+
+      await sendOrderToGoogleSheet(createdOrder);
+      triggerCelebratoryConfetti();
     } catch (err) {
       console.error('Order Sync Error:', err);
     } finally {

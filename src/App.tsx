@@ -12,20 +12,32 @@ import Preloader3D from './components/Preloader3D';
 import ShortcutsModal from './components/ShortcutsModal';
 import { translations } from './constants/translations';
 import GallerySection from './components/GallerySection';
-import { Language, Translation, GalleryData, VideoItem, WeatherCondition, WeatherData } from './types';
+import { Language, Translation, GalleryData, VideoItem, WeatherCondition, WeatherData, CartItem, UserProfile, Order, OrderStatus, Product } from './types';
 import { FULL_GALLERY_BACKUP } from './constants/fullGalleryBackup';
-import { fetchGalleryDataDirectFromSheets, getOptimizedImageUrl } from './utils/googleSheetsSync';
+import { fetchGalleryDataDirectFromSheets, getOptimizedImageUrl, sendOrderToGoogleSheet } from './utils/googleSheetsSync';
 import { OptimizedImage } from './components/OptimizedImage';
 import { VideoSkeleton } from './components/common/Skeleton';
 import { WEATHER_THEMES, fetchCurrentWeather } from './utils/weatherTheme';
 import { flavours, gifts, moreOptionsData } from './constants/data';
-import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard, RefreshCw, CheckCircle2 } from 'lucide-react';
+import { Play, Youtube, Facebook, X, Heart, Star, Snowflake, Gift, Video, Pin, ArrowUp, Sun, Moon, Keyboard, RefreshCw, CheckCircle2, ShoppingCart, User as UserIcon, Clock, Shield, MessageCircle } from 'lucide-react';
+import AuthModal from './components/AuthModal';
+import CartDrawer from './components/CartDrawer';
+import OrderHistoryModal from './components/OrderHistoryModal';
+import OwnerPortalModal from './components/OwnerPortalModal';
+import QuickAddToCartModal from './components/QuickAddToCartModal';
+import WishlistModal from './components/WishlistModal';
+import PromoBanner from './components/PromoBanner';
+import CelebrationsModal, { CelebrationEvent } from './components/CelebrationsModal';
+import GoogleWorkspaceModal from './components/GoogleWorkspaceModal';
+import CelebrationsBanner from './components/CelebrationsBanner';
+import ProBakingTips from './components/ProBakingTips';
+import CakeBuilder from './components/CakeBuilder';
 
 const getInitialFallbackGalleryData = (): GalleryData => {
   return FULL_GALLERY_BACKUP as unknown as GalleryData;
 };
 import { motion, AnimatePresence } from 'motion/react';
-import { cn } from './lib/utils';
+import { cn, isAllowedAdminUser } from './lib/utils';
 import { Toast } from './components/common/Toast';
 import ChatBot from './components/ChatBot';
 
@@ -191,6 +203,34 @@ interface AppContextType {
   lastSyncedTime: string | null;
   syncStatus: 'synced' | 'syncing' | 'offline';
   handleForceRefresh: () => Promise<void>;
+  cart: CartItem[];
+  addToCart: (item: Omit<CartItem, 'id'>) => void;
+  removeFromCart: (id: string) => void;
+  updateCartQuantity: (id: string, delta: number) => void;
+  clearCart: () => void;
+  user: UserProfile | null;
+  loginUser: (profile: Omit<UserProfile, 'id' | 'isLoggedIn'>) => void;
+  logoutUser: () => void;
+  orders: Order[];
+  addOrder: (order: Omit<Order, 'id' | 'timestamp' | 'status'>) => Order;
+  updateOrderStatus: (orderId: string, status: OrderStatus) => void;
+  addOrderReview: (orderId: string, rating: number, comment: string) => void;
+  isAdminLoggedIn: boolean;
+  setIsAdminLoggedIn: (loggedIn: boolean) => void;
+  setIsCartOpen: (open: boolean) => void;
+  setIsAuthModalOpen: (open: boolean) => void;
+  setIsOrderHistoryOpen: (open: boolean) => void;
+  setIsOwnerPortalOpen: (open: boolean) => void;
+  openQuickAddToCart: (product: Product) => void;
+  wishlist: Product[];
+  toggleWishlist: (product: Product) => void;
+  isWishlisted: (productNameEn: string) => boolean;
+  isWishlistOpen: boolean;
+  setIsWishlistOpen: (open: boolean) => void;
+  isGoogleWorkspaceModalOpen: boolean;
+  setIsGoogleWorkspaceModalOpen: (open: boolean) => void;
+  googleWorkspaceTab: 'calendar' | 'tasks';
+  openGoogleWorkspace: (tab?: 'calendar' | 'tasks') => void;
 }
 
 export const AppContext = createContext<AppContextType>({} as AppContextType);
@@ -346,7 +386,6 @@ export default function App() {
     if (typeof window !== 'undefined') {
       const saved = localStorage.getItem('theme');
       if (saved === 'light' || saved === 'dark') return saved;
-      return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
     }
     return 'light';
   });
@@ -389,6 +428,314 @@ export default function App() {
     }
     return null;
   });
+
+  // E-commerce state
+  const [cart, setCart] = useState<CartItem[]>(() => {
+    try {
+      const saved = localStorage.getItem('bnf_cart');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    try {
+      const saved = localStorage.getItem('bnf_user');
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) {
+      return null;
+    }
+  });
+
+  const [orders, setOrders] = useState<Order[]>(() => {
+    try {
+      const saved = localStorage.getItem('bnf_orders');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  const [isCartOpen, setIsCartOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isOrderHistoryOpen, setIsOrderHistoryOpen] = useState(false);
+  const [isOwnerPortalOpen, setIsOwnerPortalOpen] = useState(false);
+  const [isWishlistOpen, setIsWishlistOpen] = useState(false);
+  const [isCelebrationsModalOpen, setIsCelebrationsModalOpen] = useState(false);
+  const [isGoogleWorkspaceModalOpen, setIsGoogleWorkspaceModalOpen] = useState(false);
+  const [googleWorkspaceTab, setGoogleWorkspaceTab] = useState<'calendar' | 'tasks'>('calendar');
+
+  const openGoogleWorkspace = useCallback((tab: 'calendar' | 'tasks' = 'calendar') => {
+    setGoogleWorkspaceTab(tab);
+    setIsGoogleWorkspaceModalOpen(true);
+  }, []);
+  const [isChatOpen, setIsChatOpen] = useState(false);
+  const [isStoryInView, setIsStoryInView] = useState(false);
+  const [isAdminLoggedIn, setIsAdminLoggedIn] = useState(false);
+  const [quickProductToAdd, setQuickProductToAdd] = useState<Product | null>(null);
+
+  useEffect(() => {
+    const checkStoryVisibility = () => {
+      const storyElem = document.getElementById('story') || document.getElementById('about');
+      if (storyElem) {
+        const rect = storyElem.getBoundingClientRect();
+        const inView = rect.top < window.innerHeight * 0.85 && rect.bottom > window.innerHeight * 0.15;
+        setIsStoryInView(inView);
+      }
+    };
+
+    window.addEventListener('scroll', checkStoryVisibility, { passive: true });
+    // Check initially and also after a short delay for dynamic rendering
+    checkStoryVisibility();
+    const timer1 = setTimeout(checkStoryVisibility, 300);
+    const timer2 = setTimeout(checkStoryVisibility, 1000);
+
+    return () => {
+      window.removeEventListener('scroll', checkStoryVisibility);
+      clearTimeout(timer1);
+      clearTimeout(timer2);
+    };
+  }, []);
+
+  const [wishlist, setWishlist] = useState<Product[]>(() => {
+    try {
+      const saved = localStorage.getItem('bnf_wishlist');
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  });
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bnf_wishlist', JSON.stringify(wishlist));
+    } catch (e) {}
+  }, [wishlist]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bnf_cart', JSON.stringify(cart));
+    } catch (e) {}
+  }, [cart]);
+
+  useEffect(() => {
+    try {
+      if (user) localStorage.setItem('bnf_user', JSON.stringify(user));
+      else localStorage.removeItem('bnf_user');
+    } catch (e) {}
+  }, [user]);
+
+  useEffect(() => {
+    try {
+      localStorage.setItem('bnf_orders', JSON.stringify(orders));
+    } catch (e) {}
+  }, [orders]);
+
+  const addToCart = useCallback((item: Omit<CartItem, 'id'>) => {
+    if (!user || !user.isLoggedIn) {
+      setIsAuthModalOpen(true);
+      setToast({
+        message: lang === 'en' 
+          ? 'Please login first to add items to your cart!' 
+          : 'কার্টে প্রোডাক্ট যোগ করতে আগে লগইন করুন!',
+        visible: true
+      });
+      return;
+    }
+    const newItem: CartItem = {
+      ...item,
+      id: 'item_' + Date.now() + '_' + Math.random().toString(36).substring(2, 6)
+    };
+    setCart(prev => [...prev, newItem]);
+    setToast({
+      message: lang === 'en' ? `${item.productNameEn} added to Cart!` : `${item.productNameBn} কার্টে যোগ করা হয়েছে!`,
+      visible: true
+    });
+  }, [user, lang]);
+
+  const handleOrderCustomCake = useCallback((customNote: string, estimatedPrice: number) => {
+    addToCart({
+      productNameEn: 'Custom Bakery Cake 🎂',
+      productNameBn: 'কাস্টম বেকারি কেক 🎂',
+      img: 'https://images.unsplash.com/photo-1578985545062-69928b1d9587?w=300&q=80',
+      weight: 'Custom Size',
+      price: estimatedPrice,
+      quantity: 1,
+      customNote: customNote,
+      category: 'Customised'
+    });
+    setIsCartOpen(true);
+  }, [addToCart]);
+
+  const handleOrderForCelebration = useCallback((item: CelebrationEvent) => {
+    const note = `[Celebration Order] For ${item.personName} (${item.relationship}) - ${item.type.toUpperCase()} on ${item.date}${item.notes ? ` | Pref: ${item.notes}` : ''}`;
+    addToCart({
+      productNameEn: `${item.personName}'s Special ${item.type === 'birthday' ? 'Birthday' : 'Anniversary'} Cake 🎂`,
+      productNameBn: `${item.personName}-এর বিশেষ কেক 🎂`,
+      img: 'https://images.unsplash.com/photo-1535141192574-5d4897c13136?w=300&q=80',
+      weight: '1.0 Kg',
+      price: 650,
+      quantity: 1,
+      customNote: note,
+      category: 'Customised'
+    });
+    setIsCartOpen(true);
+  }, [addToCart]);
+
+  const removeFromCart = useCallback((id: string) => {
+    setCart(prev => prev.filter(item => item.id !== id));
+  }, []);
+
+  const updateCartQuantity = useCallback((id: string, delta: number) => {
+    setCart(prev => prev.map(item => {
+      if (item.id === id) {
+        const newQty = Math.max(1, item.quantity + delta);
+        return { ...item, quantity: newQty };
+      }
+      return item;
+    }));
+  }, []);
+
+  const clearCart = useCallback(() => {
+    setCart([]);
+  }, []);
+
+  const loginUser = useCallback((profile: Omit<UserProfile, 'id' | 'isLoggedIn'>) => {
+    const newUserProfile: UserProfile = {
+      ...profile,
+      id: 'usr_' + Date.now(),
+      isLoggedIn: true
+    };
+    setUser(newUserProfile);
+    setToast({
+      message: lang === 'en' ? `Welcome back, ${profile.name}!` : `স্বাগতম, ${profile.name}!`,
+      visible: true
+    });
+  }, [lang]);
+
+  const logoutUser = useCallback(() => {
+    setUser(null);
+    setToast({
+      message: lang === 'en' ? 'Logged out successfully' : 'লগ আউট সফল হয়েছে',
+      visible: true
+    });
+  }, [lang]);
+
+  const addOrder = useCallback((orderData: Omit<Order, 'id' | 'timestamp' | 'status'>): Order => {
+    const newOrder: Order = {
+      ...orderData,
+      id: '#BNF-' + Math.floor(1000 + Math.random() * 9000),
+      timestamp: new Date().toISOString(),
+      status: 'Pending'
+    };
+    setOrders(prev => [newOrder, ...prev]);
+    sendOrderToGoogleSheet(newOrder, false);
+    return newOrder;
+  }, []);
+
+  const updateOrderStatus = useCallback((orderId: string, status: OrderStatus) => {
+    setOrders(prev => {
+      const existing = prev.find(o => o.id === orderId);
+      if (existing) {
+        if (existing.status === 'Delivered') return prev; // Locked!
+        const updated = { ...existing, status };
+        sendOrderToGoogleSheet(updated, true);
+        return prev.map(o => o.id === orderId ? updated : o);
+      }
+      return prev;
+    });
+    setToast({
+      message: `Order ${orderId} status updated to ${status}`,
+      visible: true
+    });
+  }, []);
+
+  const updateOrder = useCallback((updatedOrder: Order) => {
+    setOrders(prev => prev.map(o => o.id === updatedOrder.id ? updatedOrder : o));
+    sendOrderToGoogleSheet(updatedOrder, true);
+    setToast({
+      message: lang === 'en' ? `Order ${updatedOrder.id} updated successfully!` : `অর্ডার ${updatedOrder.id} সেভ করা হয়েছে!`,
+      visible: true
+    });
+  }, [lang]);
+
+  const addOrderReview = useCallback((orderId: string, rating: number, comment: string) => {
+    setOrders(prev => prev.map(o => {
+      if (o.id === orderId) {
+        return {
+          ...o,
+          userReview: {
+            rating,
+            comment,
+            timestamp: new Date().toISOString()
+          }
+        };
+      }
+      return o;
+    }));
+    setToast({
+      message: lang === 'en' ? 'Thank you for your feedback!' : 'ধন্যবাদ আপনার ফিডব্যাকের জন্য!',
+      visible: true
+    });
+  }, [lang]);
+
+  const clearOldOrders = useCallback(() => {
+    const oneMonthAgo = Date.now() - 30 * 24 * 60 * 60 * 1000;
+    setOrders(prev => prev.filter(o => {
+      const orderTime = new Date(o.timestamp).getTime();
+      return orderTime >= oneMonthAgo;
+    }));
+    setToast({
+      message: lang === 'en' ? 'Orders older than 1 month removed from history' : '১ মাসের পুরনো অর্ডার মুছে ফেলা হয়েছে',
+      visible: true
+    });
+  }, [lang]);
+
+  const removeOrder = useCallback((orderId: string) => {
+    setOrders(prev => prev.filter(o => o.id !== orderId));
+    setToast({
+      message: lang === 'en' ? `Order ${orderId} removed` : `অর্ডার ${orderId} হিস্ট্রি থেকে রিমুভ করা হয়েছে`,
+      visible: true
+    });
+  }, [lang]);
+
+  const toggleWishlist = useCallback((product: Product) => {
+    setWishlist(prev => {
+      const exists = prev.some(item => item.nameEn.toLowerCase() === product.nameEn.toLowerCase());
+      if (exists) {
+        setToast({
+          message: lang === 'en' ? `Removed ${product.nameEn} from Wishlist` : `উইশলিস্ট থেকে ${product.nameBn || product.nameEn} সেশন বাদ দেওয়া হয়েছে`,
+          visible: true
+        });
+        return prev.filter(item => item.nameEn.toLowerCase() !== product.nameEn.toLowerCase());
+      } else {
+        setToast({
+          message: lang === 'en' ? `Saved ${product.nameEn} to Wishlist! ❤️` : `উইশলিস্টে ${product.nameBn || product.nameEn} সেভ করা হয়েছে! ❤️`,
+          visible: true
+        });
+        return [...prev, product];
+      }
+    });
+  }, [lang]);
+
+  const isWishlisted = useCallback((productNameEn: string) => {
+    return wishlist.some(item => item.nameEn.toLowerCase() === productNameEn.toLowerCase());
+  }, [wishlist]);
+
+  const openQuickAddToCart = useCallback((product: Product) => {
+    if (!user || !user.isLoggedIn) {
+      setIsAuthModalOpen(true);
+      setToast({
+        message: lang === 'en' 
+          ? 'Please login first to order or add items to cart!' 
+          : 'কার্টে প্রোডাক্ট যোগ করতে আগে লগইন করুন!',
+        visible: true
+      });
+      return;
+    }
+    setQuickProductToAdd(product);
+  }, [user, lang]);
 
   const handleForceRefresh = useCallback(async () => {
     try {
@@ -506,9 +853,31 @@ export default function App() {
 
   useEffect(() => {
     fetch('/api/server-date')
-      .then(res => res.json())
-      .then(data => setServerDate(data))
-      .catch(err => console.error('Date fetch error:', err));
+      .then(async res => {
+        if (!res.ok) return null;
+        const text = await res.text();
+        try {
+          return JSON.parse(text);
+        } catch {
+          return null;
+        }
+      })
+      .then(data => {
+        if (data && data.date) {
+          setServerDate(data);
+        } else {
+          setServerDate({
+            date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+            year: new Date().getFullYear()
+          });
+        }
+      })
+      .catch(() => {
+        setServerDate({
+          date: new Date().toLocaleDateString('en-GB', { day: 'numeric', month: 'long', year: 'numeric' }),
+          year: new Date().getFullYear()
+        });
+      });
   }, []);
 
   useEffect(() => {
@@ -650,13 +1019,16 @@ export default function App() {
       const uniqueUrls = Array.from(new Set(urls)).slice(0, 30);
 
       uniqueUrls.forEach(url => {
-        if (!document.querySelector(`link[rel="prefetch"][href="${CSS.escape(url)}"]`)) {
-          const link = document.createElement('link');
-          link.rel = 'prefetch';
-          link.as = 'image';
-          link.href = url;
-          document.head.appendChild(link);
-        }
+        try {
+          const exists = Array.from(document.querySelectorAll<HTMLLinkElement>('link[rel="prefetch"]')).some(link => link.href === url);
+          if (!exists) {
+            const link = document.createElement('link');
+            link.rel = 'prefetch';
+            link.as = 'image';
+            link.href = url;
+            document.head.appendChild(link);
+          }
+        } catch (e) {}
       });
     };
 
@@ -697,28 +1069,115 @@ export default function App() {
       lang, setLang: handleLanguageChange, t, theme, toggleTheme, galleryData, loading,
       setOrderModalOpen, serverDate,
       weatherData, setWeatherCondition, setWeatherAuto, refreshWeather,
-      lastSyncedTime, syncStatus, handleForceRefresh
+      lastSyncedTime, syncStatus, handleForceRefresh,
+      cart, addToCart, removeFromCart, updateCartQuantity, clearCart,
+      user, loginUser, logoutUser,
+      orders, addOrder, updateOrderStatus, addOrderReview,
+      isAdminLoggedIn, setIsAdminLoggedIn,
+      setIsCartOpen, setIsAuthModalOpen, setIsOrderHistoryOpen, setIsOwnerPortalOpen,
+      openQuickAddToCart,
+      wishlist, toggleWishlist, isWishlisted, isWishlistOpen, setIsWishlistOpen,
+      isGoogleWorkspaceModalOpen, setIsGoogleWorkspaceModalOpen, googleWorkspaceTab, openGoogleWorkspace
     }}>
       <Background />
       <div className={cn(
         "min-h-screen selection:bg-pink-100 selection:text-pink-600 relative z-10",
         theme === 'dark' ? "text-white" : "text-slate-900"
       )}>
+        <PromoBanner lang={lang} />
         <Navbar />
-        <Hero />
+        <Hero
+          onOpenCelebrationsModal={() => setIsCelebrationsModalOpen(true)}
+          onOrderForCelebration={handleOrderForCelebration}
+        />
         <Menu />
         <GallerySection />
         <VideoSection />
+        <ProBakingTips lang={lang} />
         <Story />
         <Reviews />
         <Contact />
         <FAQ />
         <Footer />
         
+        <CelebrationsModal
+          isOpen={isCelebrationsModalOpen}
+          onClose={() => setIsCelebrationsModalOpen(false)}
+          lang={lang}
+          onOrderForCelebration={handleOrderForCelebration}
+        />
+
+        <GoogleWorkspaceModal
+          isOpen={isGoogleWorkspaceModalOpen}
+          onClose={() => setIsGoogleWorkspaceModalOpen(false)}
+          lang={lang}
+          initialTab={googleWorkspaceTab}
+        />
+        
+        <WishlistModal
+          isOpen={isWishlistOpen}
+          onClose={() => setIsWishlistOpen(false)}
+        />
+        
         <OrderModal 
           isOpen={isOrderModalOpen} 
           onClose={() => setOrderModalOpen(false)} 
           lang={lang} 
+        />
+
+        <CartDrawer
+          isOpen={isCartOpen}
+          onClose={() => setIsCartOpen(false)}
+          cart={cart}
+          onRemoveItem={removeFromCart}
+          onUpdateQuantity={updateCartQuantity}
+          onClearCart={clearCart}
+          user={user}
+          onOpenAuth={() => setIsAuthModalOpen(true)}
+          onPlaceOrder={addOrder}
+          lang={lang}
+        />
+
+        <AuthModal
+          isOpen={isAuthModalOpen}
+          onClose={() => setIsAuthModalOpen(false)}
+          user={user}
+          onLogin={loginUser}
+          onLogout={logoutUser}
+          lang={lang}
+        />
+
+        <OrderHistoryModal
+          isOpen={isOrderHistoryOpen}
+          onClose={() => setIsOrderHistoryOpen(false)}
+          orders={orders}
+          onAddReview={addOrderReview}
+          onRemoveOldOrders={clearOldOrders}
+          onRemoveOrder={removeOrder}
+          lang={lang}
+        />
+
+        <OwnerPortalModal
+          isOpen={isOwnerPortalOpen}
+          onClose={() => setIsOwnerPortalOpen(false)}
+          orders={orders}
+          onUpdateStatus={updateOrderStatus}
+          onUpdateOrder={updateOrder}
+          lang={lang}
+        />
+
+        <QuickAddToCartModal
+          product={quickProductToAdd}
+          isOpen={!!quickProductToAdd}
+          onClose={() => setQuickProductToAdd(null)}
+          onAddToCart={addToCart}
+          lang={lang}
+        />
+
+        <ChatBot
+          isOpen={isChatOpen}
+          onClose={() => setIsChatOpen(false)}
+          hideFloatingButton={true}
         />
 
         <ShortcutsModal
@@ -748,6 +1207,99 @@ export default function App() {
           isVisible={toast.visible} 
           onClose={() => setToast(prev => ({ ...prev, visible: false }))} 
         />
+
+        {/* Persistent Floating Bottom Action Bar (Chat, Cart, User, Orders, Owner) */}
+        <div className="fixed bottom-6 left-4 sm:left-6 md:left-8 z-[120] flex items-center gap-2 bg-white/80 dark:bg-slate-900/95 p-2 rounded-full backdrop-blur-xl border border-white/60 dark:border-white/20 shadow-2xl text-slate-800 dark:text-white">
+          {/* Chat Assistant Trigger (Visible when Story section is in view or chat is open) */}
+          <AnimatePresence>
+            {(isStoryInView || isChatOpen) && (
+              <motion.button
+                initial={{ scale: 0, opacity: 0 }}
+                animate={{ scale: 1, opacity: 1 }}
+                exit={{ scale: 0, opacity: 0 }}
+                transition={{ type: "spring", stiffness: 300, damping: 25 }}
+                onClick={() => setIsChatOpen(prev => !prev)}
+                className="p-3 sm:p-3.5 rounded-full bg-pink-600 hover:bg-pink-700 text-white shadow-lg transition-colors relative group shrink-0"
+                title="Chat Assistant"
+              >
+                <MessageCircle size={20} className="group-hover:scale-110 transition-transform" />
+                <span className="absolute top-0 right-0 w-3 h-3 bg-red-500 border-2 border-white dark:border-slate-900 rounded-full animate-pulse" />
+              </motion.button>
+            )}
+          </AnimatePresence>
+
+          {/* Cart Trigger */}
+          <button
+            onClick={() => setIsCartOpen(true)}
+            className="p-3 sm:p-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white shadow-md transition-all relative border border-slate-200/80 dark:border-slate-700/60"
+            title="Cart"
+          >
+            <ShoppingCart size={20} className="text-pink-500 dark:text-pink-400" />
+            {cart.length > 0 && (
+              <span className="absolute -top-1.5 -right-1.5 bg-amber-400 text-slate-900 font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900 animate-pulse">
+                {cart.length}
+              </span>
+            )}
+          </button>
+
+          {/* User Account / Login Trigger */}
+          <button
+            onClick={() => setIsAuthModalOpen(true)}
+            className="p-3 sm:p-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white shadow-md transition-all border border-slate-200/80 dark:border-slate-700/60"
+            title={user?.isLoggedIn ? user.name : (lang === 'en' ? 'Login' : 'লগইন')}
+          >
+            <UserIcon size={20} className="text-pink-500 dark:text-pink-400" />
+          </button>
+
+          {/* My Orders Button */}
+          {(() => {
+            const activeCount = (user && user.isLoggedIn) ? orders.length : 0;
+            return (
+              <button
+                onClick={() => {
+                  if (!user || !user.isLoggedIn) {
+                    setIsAuthModalOpen(true);
+                  } else {
+                    setIsOrderHistoryOpen(true);
+                  }
+                }}
+                className="p-3 sm:p-3.5 rounded-full bg-slate-100 hover:bg-slate-200 dark:bg-slate-800 dark:hover:bg-slate-700 text-slate-800 dark:text-white shadow-md transition-all relative border border-slate-200/80 dark:border-slate-700/60"
+                title={`My Orders (${activeCount})`}
+              >
+                <Clock size={20} className="text-amber-500 dark:text-amber-400" />
+                {activeCount > 0 && (
+                  <span className="absolute -top-1.5 -right-1.5 bg-pink-500 text-white font-extrabold text-[10px] w-5 h-5 rounded-full flex items-center justify-center border-2 border-white dark:border-slate-900">
+                    {activeCount}
+                  </span>
+                )}
+              </button>
+            );
+          })()}
+
+          {/* Owner Admin Portal Shortcut - Shows Musu Bakery Owner Profile Photo */}
+          <button
+            onClick={() => {
+              if (user?.isLoggedIn && isAllowedAdminUser(user.phone)) {
+                setIsOwnerPortalOpen(true);
+              }
+            }}
+            className={cn(
+              "p-1 rounded-full transition-all border flex items-center justify-center relative group shrink-0",
+              (user?.isLoggedIn && isAllowedAdminUser(user.phone))
+                ? "bg-amber-500/20 border-amber-400 ring-2 ring-amber-400/50 shadow-lg shadow-amber-500/30 animate-pulse cursor-pointer"
+                : "bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-pink-500/50 cursor-default"
+            )}
+          >
+            <div className="w-9 h-9 sm:w-10 sm:h-10 rounded-full overflow-hidden border-2 border-amber-300/80 shadow-md">
+              <img src="https://i.ibb.co/wrc3VVRg/PROFILE.jpg" alt="Musu Owner" className="w-full h-full object-cover" referrerPolicy="no-referrer" />
+            </div>
+            {(user?.isLoggedIn && isAllowedAdminUser(user.phone)) && (
+              <span className="absolute -top-1 -right-1 bg-amber-400 text-slate-900 text-[8px] font-black px-1.5 py-0.5 rounded-full border border-white dark:border-slate-900 shadow">
+                ADMIN
+              </span>
+            )}
+          </button>
+        </div>
 
 
 
@@ -788,7 +1340,7 @@ export default function App() {
           )}
         </AnimatePresence>
 
-        <ChatBot floating={true} />
+        <ChatBot floating={true} isOpen={isChatOpen} onToggle={setIsChatOpen} hideFloatingButton={true} />
       </div>
     </AppContext.Provider>
   );

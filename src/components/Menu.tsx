@@ -1,6 +1,6 @@
 import React, { useState, useContext, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { ShoppingBag, ChevronRight, X, ExternalLink, Star, Facebook, ChevronLeft, Globe, Search, Cake, Gift, LayoutGrid } from 'lucide-react';
+import { ShoppingBag, ChevronRight, X, ExternalLink, Star, Facebook, ChevronLeft, Globe, Search, Cake, Gift, LayoutGrid, ShoppingCart, Heart, MessageSquare, Sparkles } from 'lucide-react';
 
 import { AppContext } from '../App';
 import { flavours, gifts, moreOptionsData } from '../constants/data';
@@ -10,6 +10,7 @@ import { playSound } from '../lib/sounds';
 import { ProductSkeleton } from './common/Skeleton';
 import { getOptimizedImageUrl } from '../utils/googleSheetsSync';
 import { OptimizedImage } from './OptimizedImage';
+import ProductReviewsModal from './ProductReviewsModal';
 
 const linkMap: Record<string, string> = {
   'Chocolate Cakes': 'https://i.ibb.co/xSTgDb8d/Chocolate-Cakes-1.png',
@@ -57,49 +58,189 @@ const linkMap: Record<string, string> = {
   'Brownies': 'https://i.ibb.co/F4rgH3Wn/Brownies-1.jpg',
 };
 
+interface MenuItemCardProps {
+  item: Product;
+  index: number;
+  activeTab: string;
+  t: any;
+  toggleWishlist: (item: Product) => void;
+  isWishlisted: (nameEn: string) => boolean;
+  openQuickAddToCart: (item: Product) => void;
+  setSelectedProduct: (item: Product) => void;
+  getProductImages: (productName: string) => string[];
+}
+
+function MenuItemCard({
+  item,
+  index,
+  activeTab,
+  t,
+  toggleWishlist,
+  isWishlisted,
+  openQuickAddToCart,
+  setSelectedProduct,
+  getProductImages
+}: MenuItemCardProps) {
+  const allImages = React.useMemo(() => {
+    const sheetImgs = getProductImages(item.nameEn);
+    const isValidImage = (url: any) => typeof url === 'string' && url.trim().length > 0 && url !== 'undefined' && url !== 'null';
+    
+    const list: string[] = [];
+    if (Array.isArray(sheetImgs)) {
+      sheetImgs.forEach(u => {
+        if (isValidImage(u) && !list.includes(u)) list.push(u);
+      });
+    }
+    if (isValidImage(item.img) && !list.includes(item.img)) {
+      list.push(item.img);
+    }
+    if (linkMap[item.nameEn] && isValidImage(linkMap[item.nameEn]) && !list.includes(linkMap[item.nameEn])) {
+      list.push(linkMap[item.nameEn]);
+    }
+    return list.length > 0 ? list : ["https://i.ibb.co/Xx2kxrrg/LOGO-1.png"];
+  }, [item, getProductImages]);
+
+  const [currentImgIndex, setCurrentImgIndex] = useState(0);
+
+  useEffect(() => {
+    if (allImages.length <= 1) return;
+    const timer = setInterval(() => {
+      setCurrentImgIndex((prev) => (prev + 1) % allImages.length);
+    }, 5000);
+    return () => clearInterval(timer);
+  }, [allImages]);
+
+  const primaryImage = allImages[currentImgIndex % allImages.length] || "https://i.ibb.co/Xx2kxrrg/LOGO-1.png";
+
+  return (
+    <div
+      className="group cursor-pointer w-full flex flex-col transition-transform duration-300 hover:scale-[1.02]"
+      onClick={() => {
+        playSound('ding');
+        setSelectedProduct(item);
+      }}
+    >
+      <div className={cn(
+        "relative aspect-square w-full overflow-hidden mb-4 bg-pink-100/50 dark:bg-pink-900/20",
+        item.rounded 
+          ? "rounded-full p-2 border-2 border-dashed border-pink-200 dark:border-pink-900/30 shadow-inner" 
+          : "rounded-[2.5rem] glass-3d neon-border-pink"
+      )}>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            toggleWishlist(item);
+          }}
+          className="absolute top-4 left-4 z-30 p-2 rounded-full glass-3d bg-white/80 dark:bg-slate-900/80 backdrop-blur-md shadow-md border border-white/40 dark:border-white/10 text-rose-500 hover:scale-110 active:scale-95 transition-all"
+          title={isWishlisted(item.nameEn) ? "Remove from Wishlist" : "Save to Wishlist"}
+        >
+          <Heart 
+            size={16} 
+            className={cn(
+              "transition-all",
+              isWishlisted(item.nameEn) ? "fill-rose-500 text-rose-500 scale-110" : "text-slate-400 hover:text-rose-500"
+            )} 
+          />
+        </button>
+
+        {allImages.length > 1 && (
+          <div className="absolute top-4 right-4 z-20 px-2.5 py-1 rounded-xl glass-3d text-[10px] font-black text-pink-600 dark:text-pink-400 border border-pink-500/30 shadow-[0_4px_12px_rgba(236,72,153,0.2)] flex items-center gap-1.5 backdrop-blur-md">
+            <div className="w-1.5 h-1.5 rounded-full bg-pink-500 animate-pulse" />
+            {currentImgIndex + 1}/{allImages.length} {t.lang === 'en' ? 'Photos' : 'ছবি'}
+          </div>
+        )}
+
+        <div className="w-full h-full absolute inset-0 overflow-hidden">
+          <AnimatePresence mode="popLayout" initial={false}>
+            <motion.div
+              key={primaryImage}
+              initial={{ opacity: 0, filter: 'blur(10px)', scale: 1.05 }}
+              animate={{ opacity: 1, filter: 'blur(0px)', scale: 1 }}
+              exit={{ opacity: 0, filter: 'blur(10px)', scale: 0.95 }}
+              transition={{ duration: 0.8, ease: "easeInOut" }}
+              className="w-full h-full absolute inset-0"
+            >
+              <OptimizedImage
+                src={primaryImage}
+                alt={item.nameEn}
+                width={400}
+                quality={75}
+                fallbackSrc="https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
+                className={cn(
+                  "w-full h-full object-cover transition-transform duration-500 lg:group-hover:scale-110 relative z-10",
+                  item.rounded ? "rounded-full shadow-lg" : "rounded-[2.2rem]"
+                )}
+              />
+            </motion.div>
+          </AnimatePresence>
+        </div>
+
+        <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 lg:group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3 z-20">
+          <div className="px-6 py-2 rounded-full glass-3d text-[10px] font-black text-white uppercase tracking-[0.2em] translate-y-4 group-hover:translate-y-0 transition-transform">
+            {t.lang === 'en' ? 'Quick View' : 'বিস্তারিত দেখুন'}
+          </div>
+        </div>
+      </div>
+
+      <div className="text-center px-2">
+        <h3 className="font-serif font-bold text-slate-800 dark:text-gray-100 text-sm md:text-xl group-hover:text-pink-600 transition-colors line-clamp-1 mb-1">
+          {t.lang === 'en' ? item.nameEn : item.nameBn}
+        </h3>
+        <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity mb-2">
+          <div className="h-0.5 w-4 bg-pink-500 rounded-full" />
+          <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest leading-none mt-0.5">Premium</span>
+          <div className="h-0.5 w-4 bg-pink-500 rounded-full" />
+        </div>
+
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            playSound('ding');
+            if (openQuickAddToCart) openQuickAddToCart(item);
+          }}
+          className="w-full py-2 px-3 rounded-xl bg-gradient-to-r from-pink-500 to-rose-600 hover:opacity-95 text-white font-bold text-xs flex items-center justify-center gap-1.5 shadow-md shadow-pink-500/20 active:scale-95 transition-all mt-1"
+        >
+          <ShoppingCart size={13} />
+          {t.lang === 'en' ? 'Order Now' : 'অর্ডার করুন'}
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function Menu() {
-  const { t, galleryData, setOrderModalOpen, loading } = useContext(AppContext);
+  const { t, galleryData, setOrderModalOpen, loading, openQuickAddToCart, toggleWishlist, isWishlisted } = useContext(AppContext);
   const [activeTab, setActiveTab] = useState<string>('Signature');
   const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
   const [searchQuery, setSearchQuery] = useState('');
+  const [isReviewsModalOpen, setIsReviewsModalOpen] = useState(false);
   
   // Lazy Loading / Infinite Scroll state
-  const [displayLimit, setDisplayLimit] = useState(12);
+  const [displayLimit, setDisplayLimit] = useState(24);
   const observerRef = React.useRef<IntersectionObserver | null>(null);
-  const loadMoreRef = React.useRef<HTMLDivElement>(null);
+
+  // Callback Ref for IntersectionObserver to prevent missing observer binding
+  const loadMoreCallbackRef = useCallback((node: HTMLDivElement | null) => {
+    if (observerRef.current) observerRef.current.disconnect();
+    if (!node) return;
+    observerRef.current = new IntersectionObserver((entries) => {
+      if (entries[0].isIntersecting) {
+        setDisplayLimit(prev => prev + 24);
+      }
+    }, { rootMargin: '250px', threshold: 0.1 });
+    observerRef.current.observe(node);
+  }, []);
 
   // Rating state
   const [ratings, setRatings] = useState<Record<string, number>>({});
 
   // Reset limit when tab or search changes
   useEffect(() => {
-    setDisplayLimit(12);
+    setDisplayLimit(24);
   }, [activeTab, searchQuery]);
-
-  // Setup Intersection Observer
-  useEffect(() => {
-    const options = {
-      root: null,
-      rootMargin: '100px',
-      threshold: 0.1
-    };
-    
-    observerRef.current = new IntersectionObserver((entries) => {
-      const target = entries[0];
-      if (target.isIntersecting) {
-        setDisplayLimit(prev => prev + 12);
-      }
-    }, options);
-
-    if (loadMoreRef.current) {
-      observerRef.current.observe(loadMoreRef.current);
-    }
-
-    return () => {
-      if (observerRef.current) observerRef.current.disconnect();
-    };
-  }, [activeTab, searchQuery, galleryData]); // Re-bind observer if data potentially changes
 
   // Group Dynamic items from galleryData
   const dynamicItems = (galleryData.items || []) as any[];
@@ -490,61 +631,18 @@ export default function Menu() {
               ))
             ) : filteredData.length > 0 ? (
               filteredData.slice(0, displayLimit).map((item: Product, index) => (
-                <motion.div
+                <MenuItemCard
                   key={`${activeTab}-${item.nameEn}-${index}`}
-                  initial={{ opacity: 0, scale: 0.9, y: 30 }}
-                  animate={{ opacity: 1, scale: 1, y: 0 }}
-                  exit={{ opacity: 0, scale: 0.9 }}
-                  whileHover={{ scale: 1.05 }}
-                  transition={{ duration: 0.5, delay: index * 0.05, ease: [0.23, 1, 0.32, 1] }}
-                  className="group cursor-pointer w-full flex flex-col"
-                  onClick={() => {
-                    playSound('ding');
-                    setSelectedProduct(item);
-                  }}
-                >
-                  <div className={cn(
-                    "relative aspect-square w-full overflow-hidden mb-4 transition-all duration-500 lg:group-hover:-translate-y-2 bg-pink-100/50 dark:bg-pink-900/20",
-                    item.rounded 
-                      ? "rounded-full p-2 border-2 border-dashed border-pink-200 dark:border-pink-900/30 shadow-inner" 
-                      : "rounded-[2.5rem] glass-3d neon-border-pink"
-                  )}>
-                    {getProductImages(item.nameEn).length > 0 && (
-                      <div className="absolute top-4 right-4 z-20 px-3 py-1 rounded-xl glass-3d text-[10px] font-black text-pink-600 dark:text-pink-400 border border-pink-500/30 shadow-[0_4px_12px_rgba(236,72,153,0.2)] flex items-center gap-1.5 backdrop-blur-md">
-                        <div className="w-1 h-1 rounded-full bg-pink-500 animate-pulse" />
-                        {getProductImages(item.nameEn).length} {t.lang === 'en' ? 'Photos' : 'ছবি'}
-                      </div>
-                    )}
-                    {/* Placeholder skeleton that stays below the image */}
-                    <div className="absolute inset-0 bg-pink-100 dark:bg-zinc-800 animate-pulse -z-10" />
-                    <OptimizedImage
-                      src={getProductImage(item)}
-                      alt={item.nameEn}
-                      width={500}
-                      quality={75}
-                      fallbackSrc="https://i.ibb.co/Xx2kxrrg/LOGO-1.png"
-                      className={cn(
-                        "w-full h-full object-cover transition-transform duration-700 lg:group-hover:scale-110 relative z-10",
-                        item.rounded ? "rounded-full shadow-lg" : "rounded-[2.2rem]"
-                      )}
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/20 to-transparent opacity-0 lg:group-hover:opacity-100 transition-all duration-300 flex flex-col items-center justify-center gap-3">
-                      <div className="px-6 py-2 rounded-full glass-3d text-[10px] font-black text-white uppercase tracking-[0.2em] translate-y-4 group-hover:translate-y-0 transition-transform">
-                        {t.lang === 'en' ? 'Quick View' : 'বিস্তারিত দেখুন'}
-                      </div>
-                    </div>
-                  </div>
-                  <div className="text-center px-2">
-                    <h3 className="font-serif font-bold text-slate-800 dark:text-gray-100 text-sm md:text-xl group-hover:text-pink-600 transition-colors line-clamp-1 mb-1">
-                      {t.lang === 'en' ? item.nameEn : item.nameBn}
-                    </h3>
-                    <div className="flex items-center justify-center gap-2 opacity-40 group-hover:opacity-100 transition-opacity">
-                      <div className="h-0.5 w-4 bg-pink-500 rounded-full" />
-                      <span className="text-[10px] font-black text-pink-500 uppercase tracking-widest leading-none mt-0.5">Premium</span>
-                      <div className="h-0.5 w-4 bg-pink-500 rounded-full" />
-                    </div>
-                  </div>
-                </motion.div>
+                  item={item}
+                  index={index}
+                  activeTab={activeTab}
+                  t={t}
+                  toggleWishlist={toggleWishlist}
+                  isWishlisted={isWishlisted}
+                  openQuickAddToCart={openQuickAddToCart}
+                  setSelectedProduct={setSelectedProduct}
+                  getProductImages={getProductImages}
+                />
               ))
             ) : (
               // Search Results Empty State (only if not loading and filteredData is 0)
@@ -553,10 +651,16 @@ export default function Menu() {
           </AnimatePresence>
         </div>
 
-        {/* Load More Observer Target */}
+        {/* Load More Observer Target & Manual Button Fallback */}
         {filteredData.length > displayLimit && (
-          <div ref={loadMoreRef} className="h-20 w-full flex items-center justify-center -mt-8 mb-16">
-            <div className="w-8 h-8 md:w-10 md:h-10 border-4 border-pink-500 border-t-transparent rounded-full animate-spin"></div>
+          <div ref={loadMoreCallbackRef} className="w-full flex flex-col items-center justify-center my-10 gap-3">
+            <button
+              onClick={() => setDisplayLimit(prev => prev + 24)}
+              className="px-8 py-3.5 rounded-full bg-gradient-to-r from-pink-500 to-rose-600 text-white font-black text-xs uppercase tracking-widest shadow-lg shadow-pink-500/20 hover:scale-105 active:scale-95 transition-all flex items-center gap-2"
+            >
+              <Sparkles size={16} />
+              {t.lang === 'en' ? 'Load More Items' : 'আরও আইটেম দেখুন'} ({filteredData.length - displayLimit} {t.lang === 'en' ? 'remaining' : 'বাকী আছে'})
+            </button>
           </div>
         )}
         
@@ -656,12 +760,28 @@ export default function Menu() {
               className="relative flex flex-col md:flex-row bg-white/90 dark:bg-black/40 backdrop-blur-xl rounded-[2.5rem] md:rounded-[3rem] overflow-hidden border border-slate-900/10 dark:border-white/20 shadow-[0_0_100px_rgba(236,72,153,0.1)] dark:shadow-[0_0_100px_rgba(236,72,153,0.2)] w-full max-w-5xl max-h-[90vh] overflow-y-auto hide-scrollbar mx-auto my-auto"
               onClick={e => e.stopPropagation()}
             >
-              <button
-                onClick={() => setSelectedProduct(null)}
-                className="absolute top-3 right-3 md:top-6 md:right-6 z-[650] w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200/50 dark:bg-slate-800/40 md:bg-black/5 dark:md:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center hover:bg-pink-500 hover:text-white hover:scale-110 active:scale-95 transition-all border border-slate-900/10 dark:border-white/20 shadow-lg backdrop-blur-md"
-              >
-                <X size={20} className="rotate-0 md:w-5 md:h-5" />
-              </button>
+              {/* Top Controls: Wishlist & Close Buttons */}
+              <div className="absolute top-3 right-3 md:top-6 md:right-6 z-[650] flex items-center gap-2">
+                <button
+                  type="button"
+                  onClick={(e) => {
+                    e.stopPropagation();
+                    playSound('ding');
+                    toggleWishlist(selectedProduct);
+                  }}
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200/60 dark:bg-slate-800/60 md:bg-black/20 dark:md:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center hover:bg-pink-500 hover:text-white hover:scale-110 active:scale-95 transition-all border border-slate-900/10 dark:border-white/20 shadow-lg backdrop-blur-md"
+                  title={isWishlisted(selectedProduct.nameEn) ? "Remove from Wishlist" : "Add to Wishlist"}
+                >
+                  <Heart size={20} className={isWishlisted(selectedProduct.nameEn) ? "fill-rose-500 text-rose-500 animate-pulse" : ""} />
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setSelectedProduct(null)}
+                  className="w-10 h-10 md:w-12 md:h-12 rounded-full bg-slate-200/60 dark:bg-slate-800/60 md:bg-black/20 dark:md:bg-white/10 text-slate-800 dark:text-white flex items-center justify-center hover:bg-pink-500 hover:text-white hover:scale-110 active:scale-95 transition-all border border-slate-900/10 dark:border-white/20 shadow-lg backdrop-blur-md"
+                >
+                  <X size={20} />
+                </button>
+              </div>
 
               {/* Slider Side */}
               <div className="w-full md:w-3/5 aspect-[4/5] relative flex items-center justify-center bg-slate-100 dark:bg-black/30 overflow-hidden shrink-0">
@@ -731,83 +851,103 @@ export default function Menu() {
                         <ChevronRight size={24} className="group-hover/btn:translate-x-1 transition-transform" />
                     </button>
 
-                    {/* Progress Bar Container */}
-                    <div className="absolute bottom-0 left-0 right-0 h-1.5 bg-black/20 z-40">
-                      <motion.div 
-                        key={`modal-bar-${selectedProduct.nameEn}-${currentImageIndex}`}
-                        initial={{ width: 0 }}
-                        animate={{ width: "100%" }}
-                        transition={{ duration: 5, ease: "linear" }}
-                        className="h-full bg-gradient-to-r from-pink-500 to-rose-600"
-                      />
-                    </div>
-
-                    {/* Dots */}
-                    <div className="absolute bottom-6 left-1/2 -translate-x-1/2 flex gap-1.5 z-30">
-                        {getProductImages(selectedProduct.nameEn).map((_, i) => (
-                          <div 
-                            key={i} 
-                            className={cn(
-                              "h-1 rounded-full transition-all duration-300",
-                              i === currentImageIndex ? "bg-pink-500 w-6" : "bg-white/60 w-1.5"
-                            )} 
-                          />
-                        ))}
+                    {/* Small Image Thumbnail Previews */}
+                    <div className="absolute bottom-4 left-1/2 -translate-x-1/2 flex gap-2 z-40 bg-black/60 p-1.5 rounded-2xl backdrop-blur-md border border-white/20 max-w-[90%] overflow-x-auto hide-scrollbar">
+                      {getProductImages(selectedProduct.nameEn).map((imgUrl, i) => (
+                        <button 
+                          key={i} 
+                          type="button"
+                          onClick={() => setCurrentImageIndex(i)}
+                          className={cn(
+                            "w-10 h-10 md:w-12 md:h-12 rounded-xl overflow-hidden border-2 transition-all shrink-0 cursor-pointer",
+                            i === currentImageIndex 
+                              ? "border-pink-500 scale-105 shadow-md shadow-pink-500/50 ring-2 ring-pink-400" 
+                              : "border-white/30 opacity-60 hover:opacity-100"
+                          )}
+                        >
+                          <img src={imgUrl} alt={`preview-${i}`} className="w-full h-full object-cover" />
+                        </button>
+                      ))}
                     </div>
                   </>
                 )}
               </div>
 
               {/* Info Side */}
-              <div className="w-full md:w-2/5 p-6 md:p-12 shrink flex flex-col justify-between bg-white/70 dark:bg-slate-900/60 md:bg-transparent dark:md:bg-transparent overflow-y-auto max-h-[50vh] md:max-h-none hide-scrollbar">
+              <div className="w-full md:w-2/5 p-6 md:p-8 shrink flex flex-col justify-between bg-white/70 dark:bg-slate-900/60 md:bg-transparent dark:md:bg-transparent overflow-y-auto max-h-[55vh] md:max-h-none hide-scrollbar gap-4">
                  <div>
                    <motion.div
                      initial={{ opacity: 0, x: 20 }}
                      animate={{ opacity: 1, x: 0 }}
-                     transition={{ delay: 0.2 }}
+                     transition={{ delay: 0.1 }}
                    >
-                     <p className="text-pink-500 font-bold tracking-[0.3em] uppercase text-[9px] md:text-[10px] mb-2 md:mb-3">
+                     <p className="text-pink-500 font-extrabold tracking-[0.25em] uppercase text-[9px] md:text-[10px] mb-1">
                         {t.lang === 'en' ? 'MENU ITEM' : 'মেনু আইটেম'}
                      </p>
                      
-                     <h2 className="text-2xl md:text-5xl font-black text-slate-900 dark:text-white leading-[1.1] mb-4 md:mb-6 tracking-tighter uppercase italic">
+                     {/* Smaller Sleeker Title */}
+                     <h2 className="text-xl md:text-3xl font-black text-slate-900 dark:text-white leading-[1.2] mb-4 md:mb-5 tracking-tight uppercase italic pr-12">
                         {t.lang === 'en' ? selectedProduct.nameEn : selectedProduct.nameBn}
                      </h2>
 
-                     <div className="space-y-3 md:space-y-4 mb-6 md:mb-8">
-                        <div className="text-slate-600 dark:text-slate-300 text-[10px] md:text-sm leading-relaxed font-medium whitespace-pre-wrap max-h-[20vh] md:max-h-[30vh] overflow-y-auto pr-2 custom-scrollbar">
+                     {/* Action Buttons Section - Shifted UP directly under title */}
+                     <div className="grid grid-cols-1 gap-2.5 mb-6">
+                        <button 
+                          onClick={() => {
+                            const itemToCart = selectedProduct;
+                            setSelectedProduct(null);
+                            if (openQuickAddToCart && itemToCart) {
+                              openQuickAddToCart(itemToCart);
+                            }
+                          }}
+                          className="w-full py-3.5 bg-gradient-to-r from-pink-500 via-rose-500 to-amber-500 text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-pink-500/20 group hover:opacity-95 active:scale-95"
+                        >
+                           <ShoppingCart size={16} className="group-hover:scale-110 transition-transform" /> 
+                           {t.lang === 'en' ? 'Add to Cart' : 'কার্টে যোগ করুন'}
+                        </button>
+
+                        <button 
+                          onClick={() => {
+                            setSelectedProduct(null);
+                            setOrderModalOpen(true);
+                          }}
+                          className="w-full py-3 bg-slate-900 dark:bg-slate-800 text-white rounded-2xl font-bold uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all hover:bg-slate-800 dark:hover:bg-slate-700 active:scale-95"
+                        >
+                           <ShoppingBag size={15} /> Direct Custom Order
+                        </button>
+                        
+                        <button 
+                          onClick={() => setIsReviewsModalOpen(true)}
+                          className="w-full py-2.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-600 dark:text-amber-400 rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all border border-amber-500/30 shadow-sm cursor-pointer active:scale-95"
+                        >
+                           <Star size={15} className="fill-amber-400 text-amber-400" />
+                           {t.lang === 'en' ? 'Product Reviews & Feedback (12)' : 'প্রোডাক্ট রিভিউ ও ফিডব্যাক (১২)'}
+                        </button>
+
+                        <a 
+                          href="https://www.facebook.com/flavoursbymusu/photos"
+                          target="_blank"
+                          rel="noreferrer"
+                          className="w-full py-2.5 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all border border-slate-200 dark:border-white/10 shadow-sm active:scale-95"
+                        >
+                           <Globe size={15} className="text-pink-600" /> VIEW MORE IMAGE
+                        </a>
+                     </div>
+
+                     {/* Description Text - Shifted DOWN directly above pricing note */}
+                     <div className="space-y-3 pt-3 border-t border-slate-200 dark:border-white/10">
+                        <div className="text-slate-600 dark:text-slate-300 text-[11px] md:text-xs leading-relaxed font-medium whitespace-pre-wrap max-h-[18vh] overflow-y-auto pr-2 custom-scrollbar">
                            {t.lang === 'en' 
                             ? selectedProduct.descEn || `✨ The Magic of Classic ${selectedProduct.nameEn}! 🎂\nMake your special days even sweeter with Bake n' Flake's super soft, fluffy, and premium ${selectedProduct.nameEn}! 🤍`
                             : selectedProduct.descBn || `✨ ক্লাসিক ${selectedProduct.nameBn || selectedProduct.nameEn} এর স্নিগ্ধ জাদুকরী স্বাদ! 🎂\nআপনার স্পেশাল দিনগুলোকে আরও মিষ্টি করে তুলতে Bake n' Flake নিয়ে এসেছে একদম নরম, তুলতুলে এবং প্রিমিয়াম ${selectedProduct.nameBn || selectedProduct.nameEn}! 🤍`}
                         </div>
 
-                        <div className="w-10 md:w-12 h-1 md:h-1.5 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.6)] mt-4" />
+                        <div className="w-10 md:w-12 h-1 bg-pink-500 rounded-full shadow-[0_0_15px_rgba(236,72,153,0.6)] mt-2" />
                      </div>
                    </motion.div>
                  </div>
 
-                 <div className="grid grid-cols-1 gap-3">
-                    <button 
-                      onClick={() => {
-                        setSelectedProduct(null);
-                        setOrderModalOpen(true);
-                      }}
-                      className="w-full py-4 bg-pink-600 hover:bg-pink-700 text-white rounded-2xl font-black uppercase tracking-widest text-xs flex items-center justify-center gap-2 transition-all shadow-lg shadow-pink-500/20 group"
-                    >
-                       <ShoppingBag size={18} className="group-hover:rotate-12 transition-transform" /> Order Now
-                    </button>
-                    
-                    <a 
-                      href="https://www.facebook.com/flavoursbymusu/photos"
-                      target="_blank"
-                      rel="noreferrer"
-                      className="w-full py-4 bg-white dark:bg-white/5 hover:bg-slate-50 dark:hover:bg-white/10 text-slate-800 dark:text-white rounded-2xl font-bold text-xs flex items-center justify-center gap-2 transition-all border border-slate-200 dark:border-white/10 shadow-sm"
-                    >
-                       <Globe size={18} className="text-pink-600" /> VIEW MORE IMAGE
-                    </a>
-                 </div>
-
-                 <div className="mt-8 pt-6 border-t border-slate-100 dark:border-white/5 text-center md:text-left">
+                 <div className="pt-2 text-center md:text-left">
                     <p className="text-[9px] text-slate-400 dark:text-slate-500 italic uppercase tracking-[0.2em] font-medium">
                        * Pricing will be based on your customization choices
                     </p>
@@ -817,6 +957,13 @@ export default function Menu() {
           </motion.div>
         )}
       </AnimatePresence>
+
+      <ProductReviewsModal
+        isOpen={isReviewsModalOpen}
+        onClose={() => setIsReviewsModalOpen(false)}
+        product={selectedProduct}
+        lang={t.lang}
+      />
     </section>
   );
 }
